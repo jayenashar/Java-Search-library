@@ -1,0 +1,171 @@
+<class-diagram version="1.0.4" icons="true" automaticImage="PNG" always-add-relationships="true" generalizations="true" 
+  realizations="true" associations="true" dependencies="true" nesting-relationships="true">  
+  <interface id="1" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/StateSpaceSearchProblem.java" binary="false">    
+    <position x="351" y="329" width="238" height="98"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="2" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.Heuristic" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/Heuristic.java" binary="false">    
+    <position x="41" y="191" width="148" height="66"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <class id="4" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.Heuristic.Zero" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/Heuristic.java" binary="false">    
+    <position x="41" y="37" width="148" height="82"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="5" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.AStar.Comparator" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/AStar.java" binary="false">    
+    <position x="610" y="191" width="238" height="98"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="6" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.BreadthFirstSearch" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/BreadthFirstSearch.java" binary="false">    
+    <position x="231" y="37" width="257" height="114"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="8" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.ActionStatePair" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/ActionStatePair.java" binary="false">    
+    <position x="508" y="467" width="170" height="130"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="9" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.AStar" project="PenPlotter" 
+    file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/AStar.java" binary="false">    
+    <position x="610" y="37" width="257" height="114"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <interface id="10" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.Action" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/Action.java" binary="false">    
+    <position x="292" y="637" width="148" height="66"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="11" corner="BOTTOM_RIGHT" language="java" name="au.edu.unsw.cse.jayen.search.Search" 
+    project="PenPlotter" file="/PenPlotter/src/au/edu/unsw/cse/jayen/search/Search.java" binary="false">    
+    <position x="292" y="191" width="257" height="82"/>    
+    <display autosize="true" package="true" initial-value="true" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <dependency>    
+    <bendpoint x="240" y="191"/>    
+    <bendpoint x="240" y="329"/>    
+    <end type="SOURCE" nodeId="6"/>    
+    <end type="TARGET" nodeId="8"/>  
+  </dependency>  
+  <realization>    
+    <end type="SOURCE" nodeId="6"/>    
+    <end type="TARGET" nodeId="11"/>  
+  </realization>  
+  <nesting>    
+    <end type="SOURCE" nodeId="2"/>    
+    <end type="TARGET" nodeId="4"/>  
+  </nesting>  
+  <dependency>    
+    <bendpoint x="579" y="191"/>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="1"/>  
+  </dependency>  
+  <association>    
+    <end type="SOURCE" nodeId="9" navigable="false">      
+      <attribute name="heuristic"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency>    
+    <bendpoint x="878" y="191"/>    
+    <bendpoint x="878" y="329"/>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="8"/>  
+  </dependency>  
+  <dependency>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="8"/>  
+  </dependency>  
+  <nesting>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="5"/>  
+  </nesting>  
+  <realization>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="11"/>  
+  </realization>  
+  <association>    
+    <end type="SOURCE" nodeId="8" navigable="false">      
+      <attribute name="action"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="10" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency>    
+    <bendpoint x="261" y="191"/>    
+    <end type="SOURCE" nodeId="6"/>    
+    <end type="TARGET" nodeId="1"/>  
+  </dependency>  
+  <dependency>    
+    <bendpoint x="619" y="329"/>    
+    <end type="SOURCE" nodeId="5"/>    
+    <end type="TARGET" nodeId="8"/>  
+  </dependency>  
+  <dependency>    
+    <bendpoint x="219" y="191"/>    
+    <bendpoint x="219" y="329"/>    
+    <bendpoint x="219" y="467"/>    
+    <end type="SOURCE" nodeId="6"/>    
+    <end type="TARGET" nodeId="10"/>  
+  </dependency>  
+  <dependency>    
+    <bendpoint x="301" y="329"/>    
+    <bendpoint x="301" y="467"/>    
+    <end type="SOURCE" nodeId="11"/>    
+    <end type="TARGET" nodeId="10"/>  
+  </dependency>  
+  <realization>    
+    <end type="SOURCE" nodeId="4"/>    
+    <end type="TARGET" nodeId="2"/>  
+  </realization>  
+  <dependency>    
+    <end type="SOURCE" nodeId="11"/>    
+    <end type="TARGET" nodeId="1"/>  
+  </dependency>  
+  <dependency>    
+    <bendpoint x="899" y="191"/>    
+    <bendpoint x="899" y="329"/>    
+    <bendpoint x="899" y="467"/>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="10"/>  
+  </dependency>  
+  <classifier-display autosize="true" package="true" initial-value="true" signature="true" visibility="true">    
+    <attributes public="true" package="true" protected="true" private="true"/>    
+    <operations public="true" package="true" protected="true" private="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>
