@@ -1,8 +1,9 @@
 package au.edu.unsw.cse.jayen.search.examples.graph;
+
 import java.util.Formatter;
 import java.util.List;
 
-import au.edu.unsw.cse.jayen.search.AStar;
+import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
 import au.edu.unsw.cse.jayen.search.Search;
 import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
@@ -24,7 +25,7 @@ public class Romania {
       final Graph graph = Romania.romaniaMap();
       final StateSpaceSearchProblem sssp = new GraphStateSpaceSearchProblem(
             graph, "Arad", "Bucharest");
-      final Search search = new AStar(new RomaniaHeuristics.Bucharest());
+      final Search search = new AStarSearch(new RomaniaHeuristics.Bucharest());
       final List<Action> actions = search.search(sssp);
       Romania.printOutput(search, actions);
    }

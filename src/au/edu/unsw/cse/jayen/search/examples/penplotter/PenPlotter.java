@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search.examples.penplotter;
+
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
@@ -9,7 +10,7 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.Scanner;
 
-import au.edu.unsw.cse.jayen.search.AStar;
+import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
 import au.edu.unsw.cse.jayen.search.Search;
 import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
@@ -35,7 +36,7 @@ public class PenPlotter {
       final Collection<Line2D> lines = PenPlotter.parseFile(args);
       final StateSpaceSearchProblem sssp = new PenPlotterStateSpaceSearchProblem(
             lines);
-      final Search search = new AStar(
+      final Search search = new AStarSearch(
             new PenPlotterHeuristics.PointSpanningTree());
       final List<Action> actions = search.search(sssp);
       PenPlotter.printOutput(search, actions);

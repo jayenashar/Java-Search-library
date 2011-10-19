@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.Set;
  * 
  * @author jayen
  */
-public class AStar implements Search {
+public class AStarSearch implements Search {
 
    /**
     * used by a priority queue in a* to compare f scores
@@ -64,7 +65,7 @@ public class AStar implements Search {
     * @param heuristic
     *           the heuristic to be used by A*
     */
-   public AStar(final Heuristic heuristic) {
+   public AStarSearch(final Heuristic heuristic) {
       this.heuristic = heuristic;
    }
 
@@ -90,8 +91,8 @@ public class AStar implements Search {
       final Map<Object, Double> h = new HashMap<Object, Double>();
       final Map<Object, Double> f = new HashMap<Object, Double>();
       final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final Queue<ActionStatePair> openSet = new PQueue<ActionStatePair>(
-            1, new Comparator(f));
+      final Queue<ActionStatePair> openSet = new PQueue<ActionStatePair>(1,
+            new Comparator(f));
       closedSet = new HashSet<Object>();
       for (final Object state : sssp.initialStates()) {
          g.put(state, 0.);
