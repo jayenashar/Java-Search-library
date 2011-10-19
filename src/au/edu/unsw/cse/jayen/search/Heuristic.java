@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search;
+
 /**
  * a heuristic to be used by informed search algorithms, namely best-first and
  * A*

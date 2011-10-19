@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search;
+
 /**
  * an action to transition from one state to another state
  * 

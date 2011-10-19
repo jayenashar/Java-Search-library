@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search.examples.penplotter;
+
 import au.edu.unsw.cse.jayen.search.Heuristic;
 
 /**

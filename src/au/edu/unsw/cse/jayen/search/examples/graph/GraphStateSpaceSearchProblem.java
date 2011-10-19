@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search.examples.graph;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;

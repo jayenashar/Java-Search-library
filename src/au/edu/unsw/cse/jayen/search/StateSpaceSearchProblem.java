@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search;
+
 /**
  * represents a state-space search problem
  * 

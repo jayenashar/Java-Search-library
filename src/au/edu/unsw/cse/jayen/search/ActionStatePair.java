@@ -1,4 +1,5 @@
 package au.edu.unsw.cse.jayen.search;
+
 /**
  * an action and the associated state that it transitions to
  * 
