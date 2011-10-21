@@ -47,8 +47,7 @@ public class BreadthFirstSearch implements Search {
    public List<Action> search(final StateSpaceSearchProblem sssp) {
       final HMap<ActionStatePair, ActionStatePair> parentInitial = new HMap<ActionStatePair, ActionStatePair>();
       final HMap<ActionStatePair, ActionStatePair> parentGoal = new HMap<ActionStatePair, ActionStatePair>();
-      // could be done with two openSets, but I've chosen a Map<state,
-      // direction> to be consistent with informed searches
+      // could be done with two openSets
       final Map<Object, Boolean> forward = new java.util.HashMap<Object, Boolean>();
       final LinkedHashSet<ActionStatePair> openSet = new LinkedHashSet<ActionStatePair>();
       closedSetInitial = new HashSet<Object>();
