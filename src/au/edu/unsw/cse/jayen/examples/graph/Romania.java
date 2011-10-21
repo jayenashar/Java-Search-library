@@ -24,7 +24,8 @@ public class Romania {
       final Graph graph = Romania.romaniaMap();
       final GraphStateSpaceSearchProblem sssp = new GraphStateSpaceSearchProblem(
             graph, "Arad", "Bucharest");
-      final au.edu.unsw.cse.jayen.search.Search search = new AStarSearch(new RomaniaHeuristics.Bucharest());
+      final au.edu.unsw.cse.jayen.search.Search search = new AStarSearch(
+            new RomaniaHeuristics.Bucharest());
       List<Action> actions = search.search(sssp);
       Romania.printOutput(search.nodesExplored(), actions);
       final au.edu.unsw.cse.jayen.bisearch.Search bisearch = new BreadthFirstSearch();

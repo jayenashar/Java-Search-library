@@ -76,6 +76,16 @@ public class AStarSearch implements Search {
     */
    private final Heuristic heuristic;
 
+   private final double justAboveOne;
+
+   /**
+    * @param heuristic
+    *           the heuristic to be used by A*
+    */
+   public AStarSearch(final Heuristic heuristic) {
+      this(heuristic, 1);
+   }
+
    /**
     * @param heuristic
     *           the heuristic to be used by A*
@@ -89,14 +99,6 @@ public class AStarSearch implements Search {
       this.justAboveOne = justAboveOne;
    }
 
-   /**
-    * @param heuristic
-    *           the heuristic to be used by A*
-    */
-   public AStarSearch(final Heuristic heuristic) {
-      this(heuristic, 1);
-   }
-
    /*
     * (non-Javadoc)
     * 
@@ -106,8 +108,6 @@ public class AStarSearch implements Search {
    public int nodesExplored() {
       return closedSet.size();
    }
-
-   private final double justAboveOne;
 
    /*
     * (non-Javadoc)
@@ -121,8 +121,8 @@ public class AStarSearch implements Search {
       final Map<Object, Double> h = new HashMap<Object, Double>();
       final Map<Object, Double> f = new HashMap<Object, Double>();
       final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(1,
-            new Comparator(f, h));
+      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(
+            1, new Comparator(f, h));
       closedSet = new HashSet<Object>();
       for (final Object state : sssp.initialStates()) {
          g.put(state, 0.);

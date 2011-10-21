@@ -19,14 +19,14 @@ import au.edu.unsw.cse.jayen.util.HMap;
  */
 public class BreadthFirstSearch implements Search {
    /**
-    * the set of expanded states from the initial states
-    */
-   private Set<Object> closedSetInitial;
-
-   /**
     * the set of expanded states from the goal states
     */
    private Set<Object> closedSetGoal;
+
+   /**
+    * the set of expanded states from the initial states
+    */
+   private Set<Object> closedSetInitial;
 
    /*
     * (non-Javadoc)
@@ -62,7 +62,7 @@ public class BreadthFirstSearch implements Search {
          forward.put(state, false);
       }
       while (!openSet.isEmpty()) {
-         ActionStatePair current = openSet.iterator().next();
+         final ActionStatePair current = openSet.iterator().next();
          openSet.remove(current);
          if (forward.get(current.state)) {
             closedSetInitial.add(current.state);

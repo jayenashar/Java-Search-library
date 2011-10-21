@@ -10,13 +10,6 @@ import au.edu.unsw.cse.jayen.search.ActionStatePair;
  */
 public interface StateSpaceSearchProblem {
    /**
-    * the initial states
-    * 
-    * @return the initial states
-    */
-   Iterable<Object> initialStates();
-
-   /**
     * the goal states
     * 
     * @return the goal states
@@ -24,15 +17,11 @@ public interface StateSpaceSearchProblem {
    Iterable<Object> goalStates();
 
    /**
-    * the actions and states that can be succeeded after the given one. it is
-    * guaranteed that this function will only be called with states succeeding
-    * the initial states.
+    * the initial states
     * 
-    * @param state
-    *           the state to succeed
-    * @return the actions and states that can be succeeded after the given one
+    * @return the initial states
     */
-   Iterable<ActionStatePair> successor(Object state);
+   Iterable<Object> initialStates();
 
    /**
     * the actions and states that can be preceded before the given one. it is
@@ -44,4 +33,15 @@ public interface StateSpaceSearchProblem {
     * @return the actions and states that can be preceded before the given one
     */
    Iterable<ActionStatePair> predecessor(Object state);
+
+   /**
+    * the actions and states that can be succeeded after the given one. it is
+    * guaranteed that this function will only be called with states succeeding
+    * the initial states.
+    * 
+    * @param state
+    *           the state to succeed
+    * @return the actions and states that can be succeeded after the given one
+    */
+   Iterable<ActionStatePair> successor(Object state);
 }

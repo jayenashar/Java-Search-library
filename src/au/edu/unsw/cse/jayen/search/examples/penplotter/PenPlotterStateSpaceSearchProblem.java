@@ -33,7 +33,7 @@ public class PenPlotterStateSpaceSearchProblem implements
     * @param state
     *           the initial state
     */
-   public PenPlotterStateSpaceSearchProblem(Object state) {
+   public PenPlotterStateSpaceSearchProblem(final Object state) {
       initialState = state;
    }
 

@@ -50,6 +50,16 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
    /*
     * (non-Javadoc)
     * 
+    * @see au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#goalStates()
+    */
+   @Override
+   public Iterable<Object> goalStates() {
+      return goalStates;
+   }
+
+   /*
+    * (non-Javadoc)
+    * 
     * @see StateSpaceSearchProblem#initialStates()
     */
    @Override
@@ -72,6 +82,25 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
    /*
     * (non-Javadoc)
     * 
+    * @see
+    * au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#predecessor(java
+    * .lang.Object)
+    */
+   @Override
+   public Iterable<ActionStatePair> predecessor(final Object state) {
+      final Collection<ActionStatePair> predecessors = new ArrayList<ActionStatePair>();
+      for (final Map.Entry<Object, Integer> neighbor : graph.neighbors(state)
+            .entrySet()) {
+         final Action action = new GraphAction(neighbor.getKey(), state,
+               neighbor.getValue());
+         predecessors.add(new ActionStatePair(action, neighbor.getKey()));
+      }
+      return predecessors;
+   }
+
+   /*
+    * (non-Javadoc)
+    * 
     * @see StateSpaceSearchProblem#successor(java.lang.Object)
     */
    @Override
@@ -84,34 +113,5 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
          successors.add(new ActionStatePair(action, neighbor.getKey()));
       }
       return successors;
-   }
-
-   /*
-    * (non-Javadoc)
-    * 
-    * @see au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#goalStates()
-    */
-   @Override
-   public Iterable<Object> goalStates() {
-      return goalStates;
-   }
-
-   /*
-    * (non-Javadoc)
-    * 
-    * @see
-    * au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#predecessor(java
-    * .lang.Object)
-    */
-   @Override
-   public Iterable<ActionStatePair> predecessor(Object state) {
-      final Collection<ActionStatePair> predecessors = new ArrayList<ActionStatePair>();
-      for (final Map.Entry<Object, Integer> neighbor : graph.neighbors(state)
-            .entrySet()) {
-         final Action action = new GraphAction(neighbor.getKey(), state,
-               neighbor.getValue());
-         predecessors.add(new ActionStatePair(action, neighbor.getKey()));
-      }
-      return predecessors;
    }
 }

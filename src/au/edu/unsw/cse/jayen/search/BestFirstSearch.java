@@ -90,8 +90,8 @@ public class BestFirstSearch implements Search {
    public List<Action> search(final StateSpaceSearchProblem sssp) {
       final Map<Object, Double> h = new HashMap<Object, Double>();
       final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(1,
-            new Comparator(h));
+      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(
+            1, new Comparator(h));
       closedSet = new HashSet<Object>();
       for (final Object state : sssp.initialStates()) {
          final double h2 = heuristic.heuristic(state);
