@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import au.edu.unsw.cse.jayen.util.PriorityQueue;
+
 /**
  * implements the best-first search algorithm
  * 
@@ -88,7 +90,7 @@ public class BestFirstSearch implements Search {
    public List<Action> search(final StateSpaceSearchProblem sssp) {
       final Map<Object, Double> h = new HashMap<Object, Double>();
       final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final Queue<ActionStatePair> openSet = new PQueue<ActionStatePair>(1,
+      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(1,
             new Comparator(h));
       closedSet = new HashSet<Object>();
       for (final Object state : sssp.initialStates()) {

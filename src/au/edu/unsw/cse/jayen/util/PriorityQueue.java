@@ -1,4 +1,4 @@
-package au.edu.unsw.cse.jayen.search;
+package au.edu.unsw.cse.jayen.util;
 /*
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -80,7 +80,7 @@ import java.util.*;
  * @author Josh Bloch, Doug Lea, Jayen Ashar
  * @param <E> the type of elements held in this collection
  */
-public class PQueue<E> extends AbstractQueue<E>
+public class PriorityQueue<E> extends AbstractQueue<E>
     implements java.io.Serializable {
 
     private static final long serialVersionUID = -7720805057305804111L;
@@ -124,7 +124,7 @@ public class PQueue<E> extends AbstractQueue<E>
      * capacity (11) that orders its elements according to their
      * {@linkplain Comparable natural ordering}.
      */
-    public PQueue() {
+    public PriorityQueue() {
         this(DEFAULT_INITIAL_CAPACITY, null);
     }
 
@@ -137,7 +137,7 @@ public class PQueue<E> extends AbstractQueue<E>
      * @throws IllegalArgumentException if {@code initialCapacity} is less
      *         than 1
      */
-    public PQueue(int initialCapacity) {
+    public PriorityQueue(int initialCapacity) {
         this(initialCapacity, null);
     }
 
@@ -152,7 +152,7 @@ public class PQueue<E> extends AbstractQueue<E>
      * @throws IllegalArgumentException if {@code initialCapacity} is
      *         less than 1
      */
-    public PQueue(int initialCapacity,
+    public PriorityQueue(int initialCapacity,
                          Comparator<? super E> comparator) {
         // Note: This restriction of at least one is not actually needed,
         // but continues for 1.5 compatibility
@@ -180,14 +180,14 @@ public class PQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     @SuppressWarnings("unchecked")
-    public PQueue(Collection<? extends E> c) {
+    public PriorityQueue(Collection<? extends E> c) {
         if (c instanceof SortedSet<?>) {
             SortedSet<? extends E> ss = (SortedSet<? extends E>) c;
             this.comparator = (Comparator<? super E>) ss.comparator();
             initElementsFromCollection(ss);
         }
-        else if (c instanceof PQueue<?>) {
-            PQueue<? extends E> pq = (PQueue<? extends E>) c;
+        else if (c instanceof PriorityQueue<?>) {
+            PriorityQueue<? extends E> pq = (PriorityQueue<? extends E>) c;
             this.comparator = (Comparator<? super E>) pq.comparator();
             initFromPriorityQueue(pq);
         }
@@ -212,7 +212,7 @@ public class PQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     @SuppressWarnings("unchecked")
-    public PQueue(PQueue<? extends E> c) {
+    public PriorityQueue(PriorityQueue<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
         initFromPriorityQueue(c);
     }
@@ -231,13 +231,13 @@ public class PQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     @SuppressWarnings("unchecked")
-    public PQueue(SortedSet<? extends E> c) {
+    public PriorityQueue(SortedSet<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
         initElementsFromCollection(c);
     }
 
-    private void initFromPriorityQueue(PQueue<? extends E> c) {
-        if (c.getClass() == PQueue.class) {
+    private void initFromPriorityQueue(PriorityQueue<? extends E> c) {
+        if (c.getClass() == PriorityQueue.class) {
             this.indices = new HashMap<Object, Integer>(c.indices);
             this.queue = c.toArray();
             this.size = c.size();
@@ -546,7 +546,7 @@ public class PQueue<E> extends AbstractQueue<E>
             if (expectedModCount != modCount)
                 throw new ConcurrentModificationException();
             if (lastRet != -1) {
-                E moved = PQueue.this.removeAt(lastRet);
+                E moved = PriorityQueue.this.removeAt(lastRet);
                 lastRet = -1;
                 if (moved == null)
                     cursor--;
@@ -556,7 +556,7 @@ public class PQueue<E> extends AbstractQueue<E>
                     forgetMeNot.add(moved);
                 }
             } else if (lastRetElt != null) {
-                PQueue.this.removeEq(lastRetElt);
+                PriorityQueue.this.removeEq(lastRetElt);
                 lastRetElt = null;
             } else {
                 throw new IllegalStateException();
