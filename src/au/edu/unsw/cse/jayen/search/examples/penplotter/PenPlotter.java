@@ -12,6 +12,7 @@ import java.util.Scanner;
 
 import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
+import au.edu.unsw.cse.jayen.search.Heuristic;
 import au.edu.unsw.cse.jayen.search.Search;
 import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
 
@@ -33,11 +34,15 @@ public class PenPlotter {
     *           the file
     */
    public static void main(final String[] args) {
+      final Point2D origin = new Point(0, 0);
       final Collection<Line2D> lines = PenPlotter.parseFile(args);
+      final Heuristic heuristic = new PenPlotterHeuristics.PointSpanningTree();
+      final PenPlotterState state = new PenPlotterState(origin, lines
+            .toArray(new Line2D[0]));
+      final Search search = new AStarSearch(heuristic, 1 + 1 / (heuristic
+            .heuristic(state) + 1));
       final StateSpaceSearchProblem sssp = new PenPlotterStateSpaceSearchProblem(
-            lines);
-      final Search search = new AStarSearch(
-            new PenPlotterHeuristics.PointSpanningTree());
+            state);
       final List<Action> actions = search.search(sssp);
       PenPlotter.printOutput(search, actions);
    }

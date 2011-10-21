@@ -26,8 +26,15 @@ public class PenPlotterStateSpaceSearchProblem implements
     *           the lines to draw
     */
    public PenPlotterStateSpaceSearchProblem(final Collection<Line2D> lines) {
-      initialState = new PenPlotterState(new Point(0, 0), lines
-            .toArray(new Line2D[0]));
+      this(new PenPlotterState(new Point(0, 0), lines.toArray(new Line2D[0])));
+   }
+
+   /**
+    * @param state
+    *           the initial state
+    */
+   public PenPlotterStateSpaceSearchProblem(Object state) {
+      initialState = state;
    }
 
    /*
