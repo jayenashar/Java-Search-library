@@ -1,4 +1,4 @@
-package au.edu.unsw.cse.jayen.search.examples.graph;
+package au.edu.unsw.cse.jayen.examples.graph;
 
 import au.edu.unsw.cse.jayen.search.Action;
 

@@ -1,12 +1,11 @@
-package au.edu.unsw.cse.jayen.search.examples.graph;
+package au.edu.unsw.cse.jayen.examples.graph;
 
 import java.util.Formatter;
 import java.util.List;
 
+import au.edu.unsw.cse.jayen.bisearch.BreadthFirstSearch;
 import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
-import au.edu.unsw.cse.jayen.search.Search;
-import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
 
 /**
  * implements the map of romania search from russell & norvig
@@ -23,24 +22,27 @@ public class Romania {
     */
    public static void main(final String[] args) {
       final Graph graph = Romania.romaniaMap();
-      final StateSpaceSearchProblem sssp = new GraphStateSpaceSearchProblem(
+      final GraphStateSpaceSearchProblem sssp = new GraphStateSpaceSearchProblem(
             graph, "Arad", "Bucharest");
-      final Search search = new AStarSearch(new RomaniaHeuristics.Bucharest());
-      final List<Action> actions = search.search(sssp);
-      Romania.printOutput(search, actions);
+      final au.edu.unsw.cse.jayen.search.Search search = new AStarSearch(new RomaniaHeuristics.Bucharest());
+      List<Action> actions = search.search(sssp);
+      Romania.printOutput(search.nodesExplored(), actions);
+      final au.edu.unsw.cse.jayen.bisearch.Search bisearch = new BreadthFirstSearch();
+      actions = bisearch.search(sssp);
+      Romania.printOutput(bisearch.nodesExplored(), actions);
    }
 
    /**
     * prints the path found
     * 
-    * @param search
+    * @param i
     *           the search performed
     * @param actions
     *           the actions to reach the goal
     */
-   private static void printOutput(final Search search,
+   private static void printOutput(final int nodesExplored,
          final List<Action> actions) {
-      System.out.println(search.nodesExplored() + " nodes explored");
+      System.out.println(nodesExplored + " nodes explored");
       double cost = 0;
       for (final Action action : actions)
          cost += action.cost();

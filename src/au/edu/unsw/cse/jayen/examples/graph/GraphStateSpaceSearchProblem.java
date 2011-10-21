@@ -1,4 +1,4 @@
-package au.edu.unsw.cse.jayen.search.examples.graph;
+package au.edu.unsw.cse.jayen.examples.graph;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +15,8 @@ import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
  * 
  * @author jayen
  */
-public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem {
+public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
+      au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem {
 
    /**
     * the goal nodes
@@ -82,8 +83,35 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem {
                neighbor.getValue());
          successors.add(new ActionStatePair(action, neighbor.getKey()));
       }
-      // TODO: sort as per tute/lab instructions
       return successors;
    }
 
+   /*
+    * (non-Javadoc)
+    * 
+    * @see au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#goalStates()
+    */
+   @Override
+   public Iterable<Object> goalStates() {
+      return goalStates;
+   }
+
+   /*
+    * (non-Javadoc)
+    * 
+    * @see
+    * au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem#predecessor(java
+    * .lang.Object)
+    */
+   @Override
+   public Iterable<ActionStatePair> predecessor(Object state) {
+      final Collection<ActionStatePair> predecessors = new ArrayList<ActionStatePair>();
+      for (final Map.Entry<Object, Integer> neighbor : graph.neighbors(state)
+            .entrySet()) {
+         final Action action = new GraphAction(neighbor.getKey(), state,
+               neighbor.getValue());
+         predecessors.add(new ActionStatePair(action, neighbor.getKey()));
+      }
+      return predecessors;
+   }
 }

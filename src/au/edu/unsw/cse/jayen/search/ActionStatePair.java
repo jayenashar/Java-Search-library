@@ -9,12 +9,12 @@ public class ActionStatePair {
    /**
     * the action
     */
-   final Action action;
+   public final Action action;
 
    /**
     * the transitioned-to state
     */
-   final Object state;
+   public final Object state;
 
    /**
     * @param action
