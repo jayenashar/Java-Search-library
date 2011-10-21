@@ -76,6 +76,9 @@ public class AStarSearch implements Search {
     */
    private final Heuristic heuristic;
 
+   /**
+    * A multiplier for the heuristic, so we expand fewer states
+    */
    private final double justAboveOne;
 
    /**
