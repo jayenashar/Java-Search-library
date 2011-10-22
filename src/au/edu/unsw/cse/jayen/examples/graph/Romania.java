@@ -3,7 +3,7 @@ package au.edu.unsw.cse.jayen.examples.graph;
 import java.util.Formatter;
 import java.util.List;
 
-import au.edu.unsw.cse.jayen.bisearch.BreadthFirstSearch;
+import au.edu.unsw.cse.jayen.bisearch.UniformCostSearch;
 import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
 
@@ -28,7 +28,7 @@ public class Romania {
             new RomaniaHeuristics.Bucharest());
       List<Action> actions = search.search(sssp);
       Romania.printOutput(search.nodesExplored(), actions);
-      final au.edu.unsw.cse.jayen.bisearch.Search bisearch = new BreadthFirstSearch();
+      final au.edu.unsw.cse.jayen.bisearch.Search bisearch = new UniformCostSearch();
       actions = bisearch.search(sssp);
       Romania.printOutput(bisearch.nodesExplored(), actions);
    }
