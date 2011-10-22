@@ -102,7 +102,7 @@ public class PenPlotterHeuristics {
    /**
     * the cost of moving from where the pen is to the nearest remaining line
     * plus the cost of the minimum spanning tree connecting the remaining lines.
-    * O(n^3) where n is the number of remaining lines. Admissible because you
+    * O(n^2) where n is the number of remaining lines. Admissible because you
     * have to at least move to and draw the remaining lines and move between
     * them.
     * 
@@ -127,7 +127,7 @@ public class PenPlotterHeuristics {
    // 107 nodes in the sample
    /**
     * the cost of the minimum spanning tree connecting the remaining lines.
-    * O(n^3) where n is the number of remaining lines. Admissible because you
+    * O(n^2) where n is the number of remaining lines. Admissible because you
     * have to at least draw the remaining lines and move between them.
     * 
     * 
