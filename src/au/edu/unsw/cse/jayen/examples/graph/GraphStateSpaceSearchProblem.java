@@ -89,7 +89,7 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
    @Override
    public Iterable<ActionStatePair> predecessor(final Object state) {
       final Collection<ActionStatePair> predecessors = new ArrayList<ActionStatePair>();
-      for (final Map.Entry<Object, Integer> neighbor : graph.neighbors(state)
+      for (final Map.Entry<Object, Integer> neighbor : graph.predecessorNeighbors(state)
             .entrySet()) {
          final Action action = new GraphAction(neighbor.getKey(), state,
                neighbor.getValue());
@@ -106,7 +106,7 @@ public class GraphStateSpaceSearchProblem implements StateSpaceSearchProblem,
    @Override
    public Iterable<ActionStatePair> successor(final Object state) {
       final Collection<ActionStatePair> successors = new ArrayList<ActionStatePair>();
-      for (final Map.Entry<Object, Integer> neighbor : graph.neighbors(state)
+      for (final Map.Entry<Object, Integer> neighbor : graph.successorNeighbors(state)
             .entrySet()) {
          final Action action = new GraphAction(state, neighbor.getKey(),
                neighbor.getValue());
