@@ -587,8 +587,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         int s = --size;
         modCount++;
         E result = (E) queue[0];
+        indices.remove(result);
         E x = (E) queue[s];
-        indices.remove(x);
         queue[s] = null;
         if (s != 0)
             siftDown(0, x);
@@ -611,7 +611,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         assert i >= 0 && i < size;
         modCount++;
         int s = --size;
-        indices.remove(queue[s]);
+        indices.remove(queue[i]);
         if (s == i) // removed last element
             queue[i] = null;
         else {
