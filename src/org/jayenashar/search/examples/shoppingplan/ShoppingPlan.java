@@ -146,6 +146,7 @@ public class ShoppingPlan {
                                             if ((combinationBitFlag2 & 1) == 1)
                                                 itemsToBuy.add(itemsMayBy.get(itemIndex));
                                             combinationBitFlag2 >>= 1;
+                                            ++itemIndex;
                                         } while (combinationBitFlag2 != 0);
                                         ++combinationBitFlag;
                                         return itemsToBuy;
