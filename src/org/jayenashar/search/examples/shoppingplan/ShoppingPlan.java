@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -33,10 +34,23 @@ public class ShoppingPlan {
         final String filename = args[0];
         final BufferedReader reader = new BufferedReader(new FileReader(filename));
         final byte numCases = Byte.parseByte(reader.readLine());
-        for (byte caseIndex = 1; caseIndex <= numCases; caseIndex++) {
-            final double minimumSpend = new Case(reader).minimumSpend();
-            System.out.println("Case #" + caseIndex + ": " + String.format("%.7f", minimumSpend));
-        }
+        final Case[] cases = new Case[numCases];
+        final double[] minimumSpends = new double[numCases];
+        IntStream.range(0, numCases).sequential().forEachOrdered(caseIndex -> {
+            try {
+                cases[caseIndex] = new Case(reader);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        IntStream.range(0, numCases).parallel().forEach(caseIndex -> {
+            minimumSpends[caseIndex] = cases[caseIndex].minimumSpend();
+            System.out.println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex]));
+        });
+        System.out.println();
+        IntStream.range(0, numCases).forEachOrdered(caseIndex -> {
+            System.out.println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex]));
+        });
     }
 
     private static class Item {
@@ -112,10 +126,15 @@ public class ShoppingPlan {
                 final double itemsMinPrice = state.itemsToBuy.stream().mapToDouble(this::getMinPrice).sum();
                 final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
                 return itemsMinPrice + goHomePrice;
-            }).search(new StateSpaceSearchProblem<State>() {
+            }, 1.0000001).search(new StateSpaceSearchProblem<State>() {
                 @Override
                 public Iterable<State> initialStates() {
-                    return Collections.singleton(new State(Collections.emptyList(), items, (short) 0, (short) 0, 0));
+                    return Collections.singleton(new State(Collections.emptyList(),
+                                                           Collections.emptyList(),
+                                                           items,
+                                                           (short) 0,
+                                                           (short) 0,
+                                                           0));
                 }
 
                 @Override
@@ -125,7 +144,15 @@ public class ShoppingPlan {
 
                 @Override
                 public Iterable<ActionStatePair<State>> successor(final State state) {
-                    return stores.stream().map(store -> {
+                    return stores.stream().filter(store -> !state.storesVisited.contains(store)).map(store -> {
+                        // calculate these once per store, even if i may not go home
+                        final double priceOfGasToStore = Math.hypot(state.xPos - store.xPos, state.yPos - store.yPos) *
+                                                         Case.this.priceOfGas;
+                        final double priceOfGasToHome = Math.hypot(store.xPos, store.yPos) * Case.this.priceOfGas;
+                        final List<Store> storesVisited = new ArrayList<>(state.storesVisited.size() + 1);
+                        storesVisited.addAll(state.storesVisited);
+                        storesVisited.add(store);
+
                         final List<Store.Item> itemsMayBy = store.items.stream().filter(storeItem -> isToBuy(state, storeItem))
                                                                        .collect(Collectors.toList());
                         final Stream<List<Store.Item>> allCombinationsOfItems =
@@ -157,14 +184,10 @@ public class ShoppingPlan {
                                     .isPerishable(items)) || state.itemsToBuy.size() == storeItemsToBuy.size();
                             final Action action = () -> {
                                 final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
-                                final double priceOfGas1 = Math.hypot(state.xPos - store.xPos, state.yPos - store.yPos) *
-                                                           Case.this.priceOfGas;
                                 if (isGoingHome)
-                                    // go home
-                                    return itemsPrice + priceOfGas1 + Math.hypot(store.xPos, store.yPos) * Case.this.priceOfGas;
+                                    return itemsPrice + priceOfGasToStore + priceOfGasToHome;
                                 else
-                                    // stay at the store
-                                    return itemsPrice + priceOfGas1;
+                                    return itemsPrice + priceOfGasToStore;
                             };
                             final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> Case.this.items.stream()
                                                                                                                    .filter(item -> item.name
@@ -178,7 +201,7 @@ public class ShoppingPlan {
                             final List<Item> itemsToBuy2 = new ArrayList<>(state.itemsToBuy.size() - itemsToBuy.size());
                             itemsToBuy2.addAll(state.itemsToBuy);
                             itemsToBuy2.removeAll(itemsBought);
-                            final State state2 = new State(itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
+                            final State state2 = new State(storesVisited, itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
                                                            isGoingHome ? 0 : store.yPos, state.spend + action.cost());
                             return new ActionStatePair<>(action, state2);
                         });
@@ -201,17 +224,20 @@ public class ShoppingPlan {
         }
 
         private class State {
-            private final List<Item> itemsBought;
-            private final List<Item> itemsToBuy;
-            private final short      xPos;
-            private final short      yPos;
-            private final double     spend;
+            private final List<Store> storesVisited;
+            private final List<Item>  itemsBought;
+            private final List<Item>  itemsToBuy;
+            private final short       xPos;
+            private final short       yPos;
+            private final double      spend;
 
-            private State(final List<Item> itemsBought,
+            private State(final List<Store> storesVisited,
+                          final List<Item> itemsBought,
                           final List<Item> itemsToBuy,
                           final short xPos,
                           final short yPos,
                           final double spend) {
+                this.storesVisited = storesVisited;
                 this.itemsBought = itemsBought;
                 this.itemsToBuy = itemsToBuy;
                 this.xPos = xPos;
