@@ -1,8 +1,8 @@
 package au.edu.unsw.cse.jayen.bisearch;
 
-import java.util.List;
-
 import au.edu.unsw.cse.jayen.search.Action;
+
+import java.util.List;
 
 /**
  * a bi-directional state space search algorithm
@@ -10,7 +10,7 @@ import au.edu.unsw.cse.jayen.search.Action;
  * @author jayen
  * 
  */
-public interface Search {
+public interface Search<State> {
    /**
     * the number of nodes expanded by the search() function
     * 
@@ -25,5 +25,5 @@ public interface Search {
     *           the definition of the state-space search problem
     * @return a list of actions from an initial state to a goal state
     */
-   List<Action> search(StateSpaceSearchProblem sssp);
+   List<Action> search(StateSpaceSearchProblem<State> sssp);
 }

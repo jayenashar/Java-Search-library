@@ -1,5 +1,7 @@
 package au.edu.unsw.cse.jayen.search;
 
+import au.edu.unsw.cse.jayen.util.PriorityQueue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,31 +11,29 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import au.edu.unsw.cse.jayen.util.PriorityQueue;
-
 /**
  * implements the best-first search algorithm
  * 
  * @author jayen
  */
-public class BestFirstSearch implements Search {
+public class BestFirstSearch<State> implements Search<State> {
 
    /**
     * used by a priority queue in best-first to compare h scores
     * 
     * @author jayen
     */
-   private class Comparator implements java.util.Comparator<ActionStatePair> {
+   private class Comparator implements java.util.Comparator<ActionStatePair<State>> {
       /**
        * the table of h scores
        */
-      private final Map<Object, Double> h;
+      private final Map<State, Double> h;
 
       /**
        * @param h
        *           the table of h scores
        */
-      public Comparator(final Map<Object, Double> h) {
+      public Comparator(final Map<State, Double> h) {
          this.h = h;
       }
 
@@ -43,7 +43,7 @@ public class BestFirstSearch implements Search {
        * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
        */
       @Override
-      public int compare(final ActionStatePair o1, final ActionStatePair o2) {
+      public int compare(final ActionStatePair<State> o1, final ActionStatePair<State> o2) {
          final double diff = h.get(o1.state) - h.get(o2.state);
          if (diff < 0)
             return -1;
@@ -57,17 +57,17 @@ public class BestFirstSearch implements Search {
    /**
     * the set of expanded states
     */
-   private Set<Object> closedSet;
+   private Set<State> closedSet;
    /**
     * the heuristic used by best-first
     */
-   private final Heuristic heuristic;
+   private final Heuristic<State> heuristic;
 
    /**
     * @param heuristic
     *           the heuristic to be used by best-first
     */
-   public BestFirstSearch(final Heuristic heuristic) {
+   public BestFirstSearch(final Heuristic<State> heuristic) {
       this.heuristic = heuristic;
    }
 
@@ -87,28 +87,28 @@ public class BestFirstSearch implements Search {
     * @see Search#search(StateSpaceSearchProblem)
     */
    @Override
-   public List<Action> search(final StateSpaceSearchProblem sssp) {
-      final Map<Object, Double> h = new HashMap<Object, Double>();
-      final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(
-            1, new Comparator(h));
-      closedSet = new HashSet<Object>();
-      for (final Object state : sssp.initialStates()) {
+   public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
+      final Map<State, Double> h = new HashMap<>();
+      final Map<ActionStatePair<State>, ActionStatePair<State>> parent = new HashMap<>();
+      final Queue<ActionStatePair<State>> openSet = new PriorityQueue<>(
+              1, new Comparator(h));
+      closedSet = new HashSet<>();
+      for (final State state : sssp.initialStates()) {
          final double h2 = heuristic.heuristic(state);
          h.put(state, h2);
-         openSet.add(new ActionStatePair(null, state));
+         openSet.add(new ActionStatePair<>(null, state));
       }
       while (!openSet.isEmpty()) {
-         ActionStatePair current = openSet.remove();
+         ActionStatePair<State> current = openSet.remove();
          closedSet.add(current.state);
          if (sssp.isGoal(current.state)) {
-            final List<Action> path = new ArrayList<Action>();
+            final List<Action> path = new ArrayList<>();
             for (; current.action != null; current = parent.get(current))
                path.add(current.action);
             Collections.reverse(path);
             return path;
          }
-         for (final ActionStatePair neighbor : sssp.successor(current.state)) {
+         for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
             if (closedSet.contains(neighbor.state))
                continue;
             if (!openSet.contains(neighbor)) {

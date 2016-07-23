@@ -6,13 +6,13 @@ package au.edu.unsw.cse.jayen.search;
  * @author jayen
  * 
  */
-public interface StateSpaceSearchProblem {
+public interface StateSpaceSearchProblem<State> {
    /**
     * the initial states
     * 
     * @return the initial states
     */
-   Iterable<Object> initialStates();
+   Iterable<State> initialStates();
 
    /**
     * checks if the given state is a goal state
@@ -21,7 +21,7 @@ public interface StateSpaceSearchProblem {
     *           the state to check
     * @return true, if the given state is a goal state; false, otherwise
     */
-   boolean isGoal(Object state);
+   boolean isGoal(State state);
 
    /**
     * the actions and states that can be succeeded after the given one
@@ -30,5 +30,5 @@ public interface StateSpaceSearchProblem {
     *           the state to succeed
     * @return the actions and states that can be succeeded after the given one
     */
-   Iterable<ActionStatePair> successor(Object state);
+   Iterable<ActionStatePair<State>> successor(State state);
 }

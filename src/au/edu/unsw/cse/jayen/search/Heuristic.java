@@ -6,7 +6,7 @@ package au.edu.unsw.cse.jayen.search;
  * 
  * @author jayen
  */
-public interface Heuristic {
+public interface Heuristic<State> {
 
    // 244 nodes in the sample
    /**
@@ -14,9 +14,9 @@ public interface Heuristic {
     * 
     * @author jayen
     */
-   public static class Zero implements Heuristic {
+   class Zero<State> implements Heuristic<State> {
       @Override
-      public double heuristic(final Object state) {
+      public double heuristic(final State state) {
          return 0;
       }
    }
@@ -29,5 +29,5 @@ public interface Heuristic {
     * @return an underestimating guess at the cost of the cheapest set of
     *         actions from the given state to any goal state
     */
-   double heuristic(Object state);
+   double heuristic(State state);
 }

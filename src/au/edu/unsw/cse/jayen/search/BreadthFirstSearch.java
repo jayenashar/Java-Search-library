@@ -14,11 +14,11 @@ import java.util.Set;
  * 
  * @author jayen
  */
-public class BreadthFirstSearch implements Search {
+public class BreadthFirstSearch<State> implements Search<State> {
    /**
     * the set of expanded states
     */
-   private Set<Object> closedSet;
+   private Set<State> closedSet;
 
    /*
     * (non-Javadoc)
@@ -36,24 +36,24 @@ public class BreadthFirstSearch implements Search {
     * @see Search#search(StateSpaceSearchProblem)
     */
    @Override
-   public List<Action> search(final StateSpaceSearchProblem sssp) {
-      final Map<ActionStatePair, ActionStatePair> parent = new HashMap<ActionStatePair, ActionStatePair>();
-      final LinkedHashSet<ActionStatePair> openSet = new LinkedHashSet<ActionStatePair>();
-      closedSet = new HashSet<Object>();
-      for (final Object state : sssp.initialStates())
-         openSet.add(new ActionStatePair(null, state));
+   public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
+      final Map<ActionStatePair<State>, ActionStatePair<State>> parent = new HashMap<>();
+      final LinkedHashSet<ActionStatePair<State>> openSet = new LinkedHashSet<>();
+      closedSet = new HashSet<>();
+      for (final State state : sssp.initialStates())
+         openSet.add(new ActionStatePair<>(null, state));
       while (!openSet.isEmpty()) {
-         ActionStatePair current = openSet.iterator().next();
+         ActionStatePair<State> current = openSet.iterator().next();
          openSet.remove(current);
          closedSet.add(current.state);
          if (sssp.isGoal(current.state)) {
-            final List<Action> path = new ArrayList<Action>();
+            final List<Action> path = new ArrayList<>();
             for (; current.action != null; current = parent.get(current))
                path.add(current.action);
             Collections.reverse(path);
             return path;
          }
-         for (final ActionStatePair neighbor : sssp.successor(current.state)) {
+         for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
             if (closedSet.contains(neighbor.state))
                continue;
             if (!openSet.contains(neighbor)) {

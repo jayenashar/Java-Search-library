@@ -1,5 +1,11 @@
 package au.edu.unsw.cse.jayen.bisearch;
 
+import au.edu.unsw.cse.jayen.search.Action;
+import au.edu.unsw.cse.jayen.search.ActionStatePair;
+import au.edu.unsw.cse.jayen.search.Heuristic;
+import au.edu.unsw.cse.jayen.util.HMap;
+import au.edu.unsw.cse.jayen.util.PriorityQueue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,34 +15,28 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import au.edu.unsw.cse.jayen.search.Action;
-import au.edu.unsw.cse.jayen.search.ActionStatePair;
-import au.edu.unsw.cse.jayen.search.Heuristic;
-import au.edu.unsw.cse.jayen.util.HMap;
-import au.edu.unsw.cse.jayen.util.PriorityQueue;
-
 /**
  * implements the A* search algorithm
  * 
  * @author jayen
  */
-public class AStarSearch implements Search {
+public class AStarSearch<State> implements Search<State> {
 
    /**
     * used by a priority queue in a* to compare f scores
     * 
     * @author jayen
     */
-   private class Comparator implements java.util.Comparator<ActionStatePair> {
+   private class Comparator implements java.util.Comparator<ActionStatePair<State>> {
       /**
        * the table of f scores
        */
-      private final Map<Object, Double> f;
+      private final Map<State, Double> f;
 
       /**
        * the table of h scores
        */
-      private final Map<Object, Double> h;
+      private final Map<State, Double> h;
 
       /**
        * @param f
@@ -44,7 +44,7 @@ public class AStarSearch implements Search {
        * @param h
        *           the table of h scores
        */
-      public Comparator(final Map<Object, Double> f, final Map<Object, Double> h) {
+      public Comparator(final Map<State, Double> f, final Map<State, Double> h) {
          this.f = f;
          this.h = h;
       }
@@ -55,7 +55,7 @@ public class AStarSearch implements Search {
        * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
        */
       @Override
-      public int compare(final ActionStatePair o1, final ActionStatePair o2) {
+      public int compare(final ActionStatePair<State> o1, final ActionStatePair<State> o2) {
          double diff = f.get(o1.state) - f.get(o2.state);
          if (diff < 0)
             return -2;
@@ -74,20 +74,20 @@ public class AStarSearch implements Search {
    /**
     * the set of expanded states from the goal states
     */
-   private Set<Object> closedSetGoal;
+   private Set<State> closedSetGoal;
 
    /**
     * the set of expanded states from the initial states
     */
-   private Set<Object> closedSetInitial;
+   private Set<State> closedSetInitial;
    /**
     * the heuristic used by A* from the goal states
     */
-   private final Heuristic heuristicGoal;
+   private final Heuristic<State> heuristicGoal;
    /**
     * the heuristic used by A* from the initial states
     */
-   private final Heuristic heuristicInitial;
+   private final Heuristic<State> heuristicInitial;
 
    /**
     * A multiplier for the heuristic from the goal states, so we expand fewer
@@ -107,8 +107,8 @@ public class AStarSearch implements Search {
     * @param heuristicGoal
     *           the heuristic to be used by A* from the goal states
     */
-   public AStarSearch(final Heuristic heuristicInitial,
-         final Heuristic heuristicGoal) {
+   public AStarSearch(final Heuristic<State> heuristicInitial,
+         final Heuristic<State> heuristicGoal) {
       this(heuristicInitial, heuristicGoal, 1, 1);
    }
 
@@ -126,8 +126,8 @@ public class AStarSearch implements Search {
     *           hg(s<sub>2</sub>) &harr; hg(s<sub>1</sub>) * justAboveOneGoal &lt;
     *           hg(s<sub>2</sub>)</code>. this is used for optimising the search
     */
-   public AStarSearch(final Heuristic heuristicInitial,
-         final Heuristic heuristicGoal, final double justAboveOneInitial,
+   public AStarSearch(final Heuristic<State> heuristicInitial,
+         final Heuristic<State> heuristicGoal, final double justAboveOneInitial,
          final double justAboveOneGoal) {
       this.heuristicInitial = heuristicInitial;
       this.heuristicGoal = heuristicGoal;
@@ -151,43 +151,43 @@ public class AStarSearch implements Search {
     * @see Search#search(StateSpaceSearchProblem)
     */
    @Override
-   public List<Action> search(final StateSpaceSearchProblem sssp) {
+   public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
       // This would be faster if I stored f & g in State, but that's bad design
-      final Map<Object, Double> g = new HashMap<Object, Double>();
-      final Map<Object, Double> h = new HashMap<Object, Double>();
-      final Map<Object, Double> f = new HashMap<Object, Double>();
-      final HMap<ActionStatePair, ActionStatePair> parentInitial = new HMap<ActionStatePair, ActionStatePair>();
-      final HMap<ActionStatePair, ActionStatePair> parentGoal = new HMap<ActionStatePair, ActionStatePair>();
+      final Map<State, Double> g = new HashMap<>();
+      final Map<State, Double> h = new HashMap<>();
+      final Map<State, Double> f = new HashMap<>();
+      final HMap<ActionStatePair, ActionStatePair> parentInitial = new HMap<>();
+      final HMap<ActionStatePair, ActionStatePair> parentGoal = new HMap<>();
       // could be done with two openSets
-      final Map<Object, Boolean> forward = new java.util.HashMap<Object, Boolean>();
-      final Queue<ActionStatePair> openSet = new PriorityQueue<ActionStatePair>(
-            1, new Comparator(f, h));
-      closedSetInitial = new HashSet<Object>();
-      closedSetGoal = new HashSet<Object>();
-      for (final Object state : sssp.initialStates()) {
+      final Map<State, Boolean> forward = new java.util.HashMap<>();
+      final Queue<ActionStatePair<State>> openSet = new PriorityQueue<>(
+              1, new Comparator(f, h));
+      closedSetInitial = new HashSet<>();
+      closedSetGoal = new HashSet<>();
+      for (final State state : sssp.initialStates()) {
          g.put(state, 0.);
          final double h2 = justAboveOneInitial
                * heuristicInitial.heuristic(state);
          h.put(state, h2);
          f.put(state, h2);
-         openSet.add(new ActionStatePair(null, state));
+         openSet.add(new ActionStatePair<>(null, state));
          forward.put(state, true);
       }
-      for (final Object state : sssp.goalStates()) {
+      for (final State state : sssp.goalStates()) {
          g.put(state, 0.);
          final double h2 = justAboveOneInitial * heuristicGoal.heuristic(state);
          h.put(state, h2);
          f.put(state, h2);
-         openSet.add(new ActionStatePair(null, state));
+         openSet.add(new ActionStatePair<>(null, state));
          forward.put(state, false);
       }
       while (!openSet.isEmpty()) {
-         final ActionStatePair current = openSet.remove();
+         final ActionStatePair<State> current = openSet.remove();
          if (forward.get(current.state)) {
             closedSetInitial.add(current.state);
             if (closedSetGoal.contains(current.state))
                return calculatePath(parentInitial, parentGoal, current);
-            for (final ActionStatePair neighbor : sssp.successor(current.state)) {
+            for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
                if (closedSetInitial.contains(neighbor.state))
                   continue;
                final Double oldG = g.get(neighbor.state);
@@ -216,7 +216,7 @@ public class AStarSearch implements Search {
             closedSetGoal.add(current.state);
             if (closedSetInitial.contains(current.state))
                return calculatePath(parentInitial, parentGoal, current);
-            for (final ActionStatePair neighbor : sssp
+            for (final ActionStatePair<State> neighbor : sssp
                   .predecessor(current.state)) {
                if (closedSetGoal.contains(neighbor.state))
                   continue;
@@ -262,7 +262,7 @@ public class AStarSearch implements Search {
          final HMap<ActionStatePair, ActionStatePair> parentInitial,
          final HMap<ActionStatePair, ActionStatePair> parentGoal,
          ActionStatePair current) {
-      final List<Action> path = new ArrayList<Action>();
+      final List<Action> path = new ArrayList<>();
       for (ActionStatePair currentInitial = parentInitial.getKey(current); currentInitial.action != null; currentInitial = parentInitial
             .get(currentInitial))
          path.add(currentInitial.action);

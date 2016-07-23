@@ -8,7 +8,7 @@ import java.util.List;
  * @author jayen
  * 
  */
-public interface Search {
+public interface Search<State> {
    /**
     * the number of nodes expanded by the search() function
     * 
@@ -23,5 +23,5 @@ public interface Search {
     *           the definition of the state-space search problem
     * @return a list of actions from an initial state to a goal state
     */
-   List<Action> search(StateSpaceSearchProblem sssp);
+   List<Action> search(StateSpaceSearchProblem<State> sssp);
 }

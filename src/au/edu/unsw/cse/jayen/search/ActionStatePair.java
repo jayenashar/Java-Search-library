@@ -5,7 +5,7 @@ package au.edu.unsw.cse.jayen.search;
  * 
  * @author jayen
  */
-public class ActionStatePair {
+public class ActionStatePair<State> {
    /**
     * the action
     */
@@ -14,7 +14,7 @@ public class ActionStatePair {
    /**
     * the transitioned-to state
     */
-   public final Object state;
+   public final State state;
 
    /**
     * @param action
@@ -22,7 +22,7 @@ public class ActionStatePair {
     * @param state
     *           the state
     */
-   public ActionStatePair(final Action action, final Object state) {
+   public ActionStatePair(final Action action, final State state) {
       this.action = action;
       this.state = state;
    }
