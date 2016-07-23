@@ -1,9 +1,9 @@
 package org.jayenashar.search.examples.shoppingplan;
 
-import au.edu.unsw.cse.jayen.bisearch.AStarSearch;
-import au.edu.unsw.cse.jayen.bisearch.StateSpaceSearchProblem;
+import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
 import au.edu.unsw.cse.jayen.search.ActionStatePair;
+import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -112,24 +112,15 @@ public class ShoppingPlan {
                 final double itemsMinPrice = state.itemsToBuy.stream().mapToDouble(this::getMinPrice).sum();
                 final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
                 return itemsMinPrice + goHomePrice;
-            }, state -> {
-                final double itemsMinPrice = state.itemsBought.stream().mapToDouble(this::getMinPrice).sum();
-                final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
-                return itemsMinPrice + goHomePrice;
             }).search(new StateSpaceSearchProblem<State>() {
                 @Override
-                public Iterable<State> goalStates() {
+                public Iterable<State> initialStates() {
                     return Collections.singleton(new State(Collections.emptyList(), items, (short) 0, (short) 0, 0));
                 }
 
                 @Override
-                public Iterable<State> initialStates() {
-                    return Collections.singleton(new State(items, Collections.emptyList(), (short) 0, (short) 0, 0));
-                }
-
-                @Override
-                public Iterable<ActionStatePair<State>> predecessor(final State state) {
-                    return null;
+                public boolean isGoal(final State state) {
+                    return state.itemsToBuy.size() == 0 && state.xPos == 0 && state.yPos == 0;
                 }
 
                 @Override
@@ -161,12 +152,13 @@ public class ShoppingPlan {
                                     }
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
-                            final boolean isBuyingPerishable = storeItemsToBuy.stream().anyMatch(storeItem -> storeItem.isPerishable(items));
+                            final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(storeItem -> storeItem
+                                    .isPerishable(items)) || state.itemsToBuy.size() == storeItemsToBuy.size();
                             final Action action = () -> {
                                 final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
                                 final double priceOfGas1 = Math.hypot(state.xPos - store.xPos, state.yPos - store.yPos) *
                                                            Case.this.priceOfGas;
-                                if (isBuyingPerishable)
+                                if (isGoingHome)
                                     // go home
                                     return itemsPrice + priceOfGas1 + Math.hypot(store.xPos, store.yPos) * Case.this.priceOfGas;
                                 else
@@ -174,10 +166,10 @@ public class ShoppingPlan {
                                     return itemsPrice + priceOfGas1;
                             };
                             final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> Case.this.items.stream()
-                                                                                                                    .filter(item -> item.name
-                                                                                                                            .equals(storeItem.name))
-                                                                                                                    .findAny()
-                                                                                                                    .get()).collect(
+                                                                                                                   .filter(item -> item.name
+                                                                                                                           .equals(storeItem.name))
+                                                                                                                   .findAny()
+                                                                                                                   .get()).collect(
                                     Collectors.toList());
                             final List<Item> itemsBought = new ArrayList<>(state.itemsBought.size() + itemsToBuy.size());
                             itemsBought.addAll(state.itemsBought);
@@ -185,8 +177,8 @@ public class ShoppingPlan {
                             final List<Item> itemsToBuy2 = new ArrayList<>(state.itemsToBuy.size() - itemsToBuy.size());
                             itemsToBuy2.addAll(state.itemsToBuy);
                             itemsToBuy2.removeAll(itemsBought);
-                            final State state2 = new State(itemsBought, itemsToBuy2, isBuyingPerishable ? 0 : store.xPos,
-                                                           isBuyingPerishable ? 0 : store.yPos, state.spend + action.cost());
+                            final State state2 = new State(itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
+                                                           isGoingHome ? 0 : store.yPos, state.spend + action.cost());
                             return new ActionStatePair<>(action, state2);
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
@@ -241,8 +233,8 @@ public class ShoppingPlan {
                 final State state = (State) o;
                 return xPos == state.xPos &&
                        yPos == state.yPos &&
-                       Objects.equals(itemsBought.size(), state.itemsBought.size()) &&
-                       Objects.equals(itemsToBuy.size(), state.itemsToBuy.size());
+                       Objects.equals(itemsBought, state.itemsBought) &&
+                       Objects.equals(itemsToBuy, state.itemsToBuy);
             }
         }
     }
