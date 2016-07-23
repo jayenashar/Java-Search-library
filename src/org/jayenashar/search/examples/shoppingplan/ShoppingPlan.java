@@ -48,9 +48,8 @@ public class ShoppingPlan {
             System.out.println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex]));
         });
         System.out.println();
-        IntStream.range(0, numCases).forEachOrdered(caseIndex -> {
-            System.out.println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex]));
-        });
+        IntStream.range(0, numCases).forEachOrdered(caseIndex -> System.out
+                .println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex])));
     }
 
     private static class Item {
@@ -64,41 +63,6 @@ public class ShoppingPlan {
         private Item(final String name, final boolean perishable) {
             this.name = name;
             this.perishable = perishable;
-        }
-    }
-
-    private static class Store {
-        private final short      xPos;
-        private final short      yPos;
-        private final List<Item> items;
-
-        private Store(final String s) {
-            final String[] store = s.split(" ", 3);
-            xPos = Short.parseShort(store[0]);
-            yPos = Short.parseShort(store[1]);
-            items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
-        }
-
-        private static class Item {
-            private final String name;
-            private final short  price;
-
-            private Item(final String s) {
-                this(s.split(":"));
-            }
-
-            private Item(final String[] strings) {
-                this(strings[0], Short.parseShort(strings[1]));
-            }
-
-            private Item(final String name, final short price) {
-                this.name = name;
-                this.price = price;
-            }
-
-            private boolean isPerishable(final List<ShoppingPlan.Item> items) {
-                return items.stream().anyMatch(item -> item.perishable && item.name.equals(name));
-            }
         }
     }
 
@@ -153,7 +117,7 @@ public class ShoppingPlan {
                         storesVisited.addAll(state.storesVisited);
                         storesVisited.add(store);
 
-                        final List<Store.Item> itemsMayBy = store.items.stream().filter(storeItem -> isToBuy(state, storeItem))
+                        final List<Store.Item> itemsMayBy = store.items.stream().filter(storeItem -> storeItem.isToBuy(state))
                                                                        .collect(Collectors.toList());
                         final Stream<List<Store.Item>> allCombinationsOfItems =
                                 StreamSupport.stream(((Iterable<List<Store.Item>>) () -> new Iterator<List<Store.Item>>() {
@@ -180,8 +144,8 @@ public class ShoppingPlan {
                                     }
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
-                            final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(storeItem -> storeItem
-                                    .isPerishable(items)) || state.itemsToBuy.size() == storeItemsToBuy.size();
+                            final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable) ||
+                                                        state.itemsToBuy.size() == storeItemsToBuy.size();
                             final Action action = () -> {
                                 final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
                                 if (isGoingHome)
@@ -189,18 +153,14 @@ public class ShoppingPlan {
                                 else
                                     return itemsPrice + priceOfGasToStore;
                             };
-                            final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> Case.this.items.stream()
-                                                                                                                   .filter(item -> item.name
-                                                                                                                           .equals(storeItem.name))
-                                                                                                                   .findAny()
-                                                                                                                   .get()).collect(
+                            final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> storeItem.item).collect(
                                     Collectors.toList());
                             final List<Item> itemsBought = new ArrayList<>(state.itemsBought.size() + itemsToBuy.size());
                             itemsBought.addAll(state.itemsBought);
                             itemsBought.addAll(itemsToBuy);
                             final List<Item> itemsToBuy2 = new ArrayList<>(state.itemsToBuy.size() - itemsToBuy.size());
                             itemsToBuy2.addAll(state.itemsToBuy);
-                            itemsToBuy2.removeAll(itemsBought);
+                            itemsToBuy2.removeAll(itemsToBuy);
                             final State state2 = new State(storesVisited, itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
                                                            isGoingHome ? 0 : store.yPos, state.spend + action.cost());
                             return new ActionStatePair<>(action, state2);
@@ -210,17 +170,56 @@ public class ShoppingPlan {
             }).stream().mapToDouble(Action::cost).sum();
         }
 
-        private static boolean isToBuy(final State state, final Store.Item storeItem) {
-            return state.itemsToBuy.stream().anyMatch(item -> item.name.equals(storeItem.name));
-        }
-
         private double getMinPrice(final Item item) {
-            return stores.stream().mapToDouble(store -> getPrice(item, store)).min().getAsDouble();
+            return stores.stream().mapToDouble(store -> store.getPrice(item)).min().getAsDouble();
         }
 
-        private static double getPrice(final Item item, final Store store) {
-            return store.items.stream().filter(storeItem -> storeItem.name.equals(item.name))
-                              .mapToDouble(storeItem -> storeItem.price).min().orElse(Double.POSITIVE_INFINITY);
+        private class Store {
+            private final short      xPos;
+            private final short      yPos;
+            private final List<Item> items;
+
+            private Store(final String s) {
+                final String[] store = s.split(" ", 3);
+                xPos = Short.parseShort(store[0]);
+                yPos = Short.parseShort(store[1]);
+                items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
+            }
+
+            private double getPrice(final ShoppingPlan.Item item) {
+                return items.stream().filter(storeItem -> storeItem.item == item).mapToDouble(storeItem -> storeItem.price).min()
+                            .orElse(Double.POSITIVE_INFINITY);
+            }
+
+            private class Item {
+                private final ShoppingPlan.Item item;
+                private final short             price;
+
+                private Item(final String s) {
+                    this(s.split(":"));
+                }
+
+                private Item(final String[] strings) {
+                    this(strings[0], Short.parseShort(strings[1]));
+                }
+
+                private Item(final String name, final short price) {
+                    this(Case.this.items.stream().filter(item -> item.name.equals(name)).findAny().get(), price);
+                }
+
+                private Item(final ShoppingPlan.Item item, final short price) {
+                    this.item = item;
+                    this.price = price;
+                }
+
+                private boolean isToBuy(final State state) {
+                    return state.itemsToBuy.contains(item);
+                }
+
+                private boolean isPerishable() {
+                    return item.perishable;
+                }
+            }
         }
 
         private class State {
