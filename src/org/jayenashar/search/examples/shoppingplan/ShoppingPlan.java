@@ -52,7 +52,7 @@ public class ShoppingPlan {
                 .println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex])));
     }
 
-    private static class Item {
+    private static class Item implements Comparable<Item> {
         private final String  name;
         private final boolean perishable;
         private short minPrice = Short.MAX_VALUE;
@@ -66,13 +66,18 @@ public class ShoppingPlan {
             this.perishable = perishable;
         }
 
-        private double getMinPrice() {
+        private short getMinPrice() {
             return minPrice;
         }
 
         private void setMinPrice(short price) {
             if (price < minPrice)
                 minPrice = price;
+        }
+
+        @Override
+        public int compareTo(final Item o) {
+            return name.compareTo(o.name);
         }
     }
 
@@ -97,7 +102,7 @@ public class ShoppingPlan {
 
         private double minimumSpend() {
             return new AStarSearch<State>(state -> {
-                final double itemsMinPrice = state.itemsToBuy.stream().mapToDouble(ShoppingPlan.Item::getMinPrice).sum();
+                final int itemsMinPrice = state.itemsToBuy.stream().mapToInt(Item::getMinPrice).sum();
                 final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
                 return itemsMinPrice + goHomePrice;
             }, 1.0000001).search(new StateSpaceSearchProblem<State>() {
@@ -154,7 +159,7 @@ public class ShoppingPlan {
                                     }
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
-                            final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
+                            final int itemsPrice = storeItemsToBuy.stream().mapToInt(item -> item.price).sum();
                             final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable) ||
                                                         state.itemsToBuy.size() == storeItemsToBuy.size();
                             final double cost = itemsPrice + priceOfGasToStore + (isGoingHome ? priceOfGasToHome : 0);
@@ -167,8 +172,12 @@ public class ShoppingPlan {
                             final List<Item> itemsToBuy2 = new ArrayList<>(state.itemsToBuy.size() - itemsToBuy.size());
                             itemsToBuy2.addAll(state.itemsToBuy);
                             itemsToBuy2.removeAll(itemsToBuy);
-                            final State state2 = new State(storesVisited, itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
-                                                           isGoingHome ? 0 : store.yPos, state.spend + cost);
+                            final State state2 = new State(storesVisited,
+                                                           itemsBought,
+                                                           itemsToBuy2,
+                                                           isGoingHome ? 0 : store.xPos,
+                                                           isGoingHome ? 0 : store.yPos,
+                                                           state.spend + cost);
                             return new ActionStatePair<>(action, state2);
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
@@ -241,8 +250,8 @@ public class ShoppingPlan {
                 this.yPos = yPos;
                 this.spend = spend;
 
-                itemsBought.sort((item1, item2) -> item1.name.compareTo(item2.name));
-                itemsToBuy.sort((item1, item2) -> item1.name.compareTo(item2.name));
+                Collections.sort(itemsBought);
+                Collections.sort(itemsToBuy);
             }
 
             @Override
