@@ -55,6 +55,7 @@ public class ShoppingPlan {
     private static class Item {
         private final String  name;
         private final boolean perishable;
+        private short minPrice = Short.MAX_VALUE;
 
         private Item(final String s) {
             this(s.replaceFirst("!$", ""), s.endsWith("!"));
@@ -63,6 +64,15 @@ public class ShoppingPlan {
         private Item(final String name, final boolean perishable) {
             this.name = name;
             this.perishable = perishable;
+        }
+
+        private double getMinPrice() {
+            return minPrice;
+        }
+
+        private void setMinPrice(short price) {
+            if (price < minPrice)
+                minPrice = price;
         }
     }
 
@@ -87,7 +97,7 @@ public class ShoppingPlan {
 
         private double minimumSpend() {
             return new AStarSearch<State>(state -> {
-                final double itemsMinPrice = state.itemsToBuy.stream().mapToDouble(this::getMinPrice).sum();
+                final double itemsMinPrice = state.itemsToBuy.stream().mapToDouble(ShoppingPlan.Item::getMinPrice).sum();
                 final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
                 return itemsMinPrice + goHomePrice;
             }, 1.0000001).search(new StateSpaceSearchProblem<State>() {
@@ -166,10 +176,6 @@ public class ShoppingPlan {
             }).stream().mapToDouble(Action::cost).sum();
         }
 
-        private double getMinPrice(final Item item) {
-            return stores.stream().mapToDouble(store -> store.getPrice(item)).min().getAsDouble();
-        }
-
         private class Store {
             private final short      xPos;
             private final short      yPos;
@@ -180,11 +186,6 @@ public class ShoppingPlan {
                 xPos = Short.parseShort(store[0]);
                 yPos = Short.parseShort(store[1]);
                 items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
-            }
-
-            private double getPrice(final ShoppingPlan.Item item) {
-                return items.stream().filter(storeItem -> storeItem.item == item).mapToDouble(storeItem -> storeItem.price).min()
-                            .orElse(Double.POSITIVE_INFINITY);
             }
 
             private class Item {
@@ -206,6 +207,7 @@ public class ShoppingPlan {
                 private Item(final ShoppingPlan.Item item, final short price) {
                     this.item = item;
                     this.price = price;
+                    item.setMinPrice(price);
                 }
 
                 private boolean isToBuy(final State state) {
