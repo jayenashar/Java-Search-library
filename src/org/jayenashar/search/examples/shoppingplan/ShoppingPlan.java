@@ -57,13 +57,14 @@ public class ShoppingPlan {
         private final short       priceOfGas;
         private final List<Item>  items;
         private final List<Store> stores;
+        private final Store       home;
+        private final byte        numStores;
 
         private Case(final BufferedReader reader) throws IOException {
             final String[] itemsStoresGas = reader.readLine().split(" ");
             final byte numItems = Byte.parseByte(itemsStoresGas[0]);
-            final byte numStores = Byte.parseByte(itemsStoresGas[1]);
+            numStores = Byte.parseByte(itemsStoresGas[1]);
             priceOfGas = Short.parseShort(itemsStoresGas[2]);
-
 
             final String[] itemsArray = reader.readLine().split(" ");
             items = new ArrayList<>(itemsArray.length);
@@ -71,26 +72,26 @@ public class ShoppingPlan {
                 items.add(new Item(itemsArray[i], i));
             assert numItems == items.size();
 
-            stores = new ArrayList<>(numStores);
+            stores = new ArrayList<>(numStores + 1);
             for (int storeIndex = 0; storeIndex < numStores; storeIndex++)
-                stores.add(new Store(reader.readLine()));
+                stores.add(new Store(reader.readLine(), stores));
+            home = new Store("0 0 ", stores);
+            stores.add(home);
         }
 
         private double minimumSpend() {
             final AStarSearch<State> search = new AStarSearch<>(state -> {
                 final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
-                final double goNearestStoreAndHome = stores.stream().filter(store -> !state.storesVisited.contains(store)
-                                                                            // somehow filtering out stores that have no items we
-                                                                            // still need to buy makes it explore MORE states
+                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> !state.storesVisited.contains(store) &&
+                                                                                          store != home
+                                                                                 // somehow filtering out stores that have no items we
+                                                                                 // still need to buy makes it explore MORE states
                 /* && store.items.stream().anyMatch(storeItem -> state.itemsToBuy.get(storeItem.item.index))*/)
-                                                           .mapToDouble(store -> (state.isHome() ?
-                                                                                  store.goHomeDistance() :
-                                                                                  Math.hypot(store.xPos - state.xPos,
-                                                                                             store.yPos - state.yPos)) +
-                                                                                 store.goHomeDistance()).min()
-                                                           .orElse(Double.POSITIVE_INFINITY);
-                return itemsMinPrice + goNearestStoreAndHome * priceOfGas;
-            }, 1.0000001);
+                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+                                                                                      store.goStorePrice(home)).min()
+                                                                .orElse(Double.POSITIVE_INFINITY);
+                return itemsMinPrice + goNearestStoreAndHomePrice;
+            });
             final double minimumSpend = search.search(new StateSpaceSearchProblem<State>() {
                 @Override
                 public Iterable<State> initialStates() {
@@ -99,8 +100,7 @@ public class ShoppingPlan {
                     return Collections.singleton(new State(Collections.emptyList(),
                                                            new BitSet(items.size()),
                                                            itemsToBuy,
-                                                           (short) 0,
-                                                           (short) 0,
+                                                           home,
                                                            0));
                 }
 
@@ -111,11 +111,10 @@ public class ShoppingPlan {
 
                 @Override
                 public Iterable<ActionStatePair<State>> successor(final State state) {
-                    return stores.stream().filter(store -> !state.storesVisited.contains(store)).map(store -> {
+                    return stores.stream().filter(store -> !state.storesVisited.contains(store) && store != home).map(store -> {
                         // calculate these once per store, even if i may not go home
-                        final double priceOfGasToStore = Math.hypot(state.xPos - store.xPos, state.yPos - store.yPos) *
-                                                         Case.this.priceOfGas;
-                        final double priceOfGasToHome = store.goHomePrice();
+                        final double priceOfGasToStore = state.store.goStorePrice(store);
+                        final double priceOfGasToHome = store.goStorePrice(home);
                         final List<Store> storesVisited = new ArrayList<>(state.storesVisited.size() + 1);
                         storesVisited.addAll(state.storesVisited);
                         storesVisited.add(store);
@@ -163,8 +162,7 @@ public class ShoppingPlan {
                             final State state2 = new State(storesVisited,
                                                            itemsBought,
                                                            itemsToBuy2,
-                                                           isGoingHome ? 0 : store.xPos,
-                                                           isGoingHome ? 0 : store.yPos,
+                                                           isGoingHome ? home : store,
                                                            state.spend + cost);
                             return new ActionStatePair<>(action, state2);
                         });
@@ -210,24 +208,27 @@ public class ShoppingPlan {
             private final short      xPos;
             private final short      yPos;
             private final List<Item> items;
-            private final double     goHomePrice;
-            private final double     goHomeDistance;
+            private final double[]   goStorePrices; // last one reserved for home
 
-            private Store(final String s) {
+            private Store(final String s, final List<Store> stores) {
                 final String[] store = s.split(" ", 3);
                 xPos = Short.parseShort(store[0]);
                 yPos = Short.parseShort(store[1]);
-                items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
-                goHomeDistance = Math.hypot(xPos, yPos);
-                goHomePrice = goHomeDistance * priceOfGas;
+                if (store[2].isEmpty())
+                    items = Collections.emptyList();
+                else
+                    items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
+                goStorePrices = new double[numStores + 1];
+                for (int s2 = 0; s2 < stores.size(); s2++) {
+                    Store store2 = stores.get(s2);
+                    final double goStorePrice = Math.hypot(store2.xPos - xPos, store2.yPos - yPos) * priceOfGas;
+                    store2.goStorePrices[stores.size()] = goStorePrice;
+                    goStorePrices[s2] = goStorePrice;
+                }
             }
 
-            private double goHomeDistance() {
-                return goHomeDistance;
-            }
-
-            private double goHomePrice() {
-                return goHomePrice;
+            private double goStorePrice(final Store store2) {
+                return goStorePrices[stores.indexOf(store2)];
             }
 
             private class Item {
@@ -266,27 +267,23 @@ public class ShoppingPlan {
             private final List<Store> storesVisited;
             private final BitSet      itemsBought;
             private final BitSet      itemsToBuy;
-            private final short       xPos;
-            private final short       yPos;
+            private final Store       store;
             private final double      spend;
 
             private State(final List<Store> storesVisited,
                           final BitSet itemsBought,
                           final BitSet itemsToBuy,
-                          final short xPos,
-                          final short yPos,
-                          final double spend) {
+                          final Store store, final double spend) {
                 this.storesVisited = storesVisited;
                 this.itemsBought = itemsBought;
                 this.itemsToBuy = itemsToBuy;
-                this.xPos = xPos;
-                this.yPos = yPos;
+                this.store = store;
                 this.spend = spend;
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(itemsBought, itemsToBuy, xPos, yPos);
+                return Objects.hash(itemsBought, itemsToBuy, store);
             }
 
             @Override
@@ -294,14 +291,9 @@ public class ShoppingPlan {
                 if (this == o) return true;
                 if (o == null || getClass() != o.getClass()) return false;
                 final State state = (State) o;
-                return xPos == state.xPos &&
-                       yPos == state.yPos &&
+                return Objects.equals(store, state.store) &&
                        Objects.equals(itemsBought, state.itemsBought) &&
                        Objects.equals(itemsToBuy, state.itemsToBuy);
-            }
-
-            private boolean isHome() {
-                return xPos == 0 && yPos == 0;
             }
         }
     }
