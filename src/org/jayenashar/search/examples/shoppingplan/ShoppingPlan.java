@@ -56,6 +56,7 @@ public class ShoppingPlan {
     private static class Case {
         private final short       priceOfGas;
         private final List<Item>  items;
+        private final BitSet      perishableItems;
         private final List<Store> stores;
         private final Store       home;
         private final byte        numStores;
@@ -68,8 +69,12 @@ public class ShoppingPlan {
 
             final String[] itemsArray = reader.readLine().split(" ");
             items = new ArrayList<>(itemsArray.length);
-            for (int i = 0; i < itemsArray.length; i++)
-                items.add(new Item(itemsArray[i], i));
+            perishableItems = new BitSet(items.size());
+            for (int i = 0; i < itemsArray.length; i++) {
+                final Item item = new Item(itemsArray[i], i);
+                items.add(item);
+                perishableItems.set(i, item.perishable);
+            }
             assert numItems == items.size();
 
             stores = new ArrayList<>(numStores + 1);
@@ -77,6 +82,7 @@ public class ShoppingPlan {
                 stores.add(new Store(reader.readLine(), stores));
             home = new Store("0 0 ", stores);
             stores.add(home);
+
         }
 
         private double minimumSpend() {
@@ -121,8 +127,8 @@ public class ShoppingPlan {
 
                         final List<Store.Item> itemsMayBy = store.items.stream().filter(storeItem -> storeItem.isToBuy(state))
                                                                        .collect(Collectors.toList());
-                        final Stream<List<Store.Item>> allCombinationsOfItems =
-                                StreamSupport.stream(((Iterable<List<Store.Item>>) () -> new Iterator<List<Store.Item>>() {
+                        final Stream<BitSet> allCombinationsOfItems =
+                                StreamSupport.stream(((Iterable<BitSet>) () -> new Iterator<BitSet>() {
                                     private long combinationBitFlag = 1;
 
                                     @Override
@@ -131,31 +137,29 @@ public class ShoppingPlan {
                                     }
 
                                     @Override
-                                    public List<Store.Item> next() {
+                                    public BitSet next() {
                                         long combinationBitFlag2 = combinationBitFlag;
                                         int itemIndex = 0;
-                                        final List<Store.Item> itemsToBuy = new ArrayList<>(itemsMayBy.size());
+                                        final BitSet storeItemsToBuy = new BitSet(store.items.size());
                                         do {
                                             if ((combinationBitFlag2 & 1) == 1)
-                                                itemsToBuy.add(itemsMayBy.get(itemIndex));
+                                                storeItemsToBuy.set(store.items.indexOf(itemsMayBy.get(itemIndex)));
                                             combinationBitFlag2 >>= 1;
                                             ++itemIndex;
                                         } while (combinationBitFlag2 != 0);
                                         ++combinationBitFlag;
-                                        return itemsToBuy;
+                                        return storeItemsToBuy;
                                     }
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
-                            final BitSet itemsToBuy = new BitSet(items.size());
-                            storeItemsToBuy.stream().mapToInt(storeItem -> storeItem.item.index).forEach(itemsToBuy::set);
+                            final BitSet itemsToBuy = store.getItemBitSet(storeItemsToBuy);
                             final BitSet itemsBought = (BitSet) state.itemsBought.clone();
                             itemsBought.or(itemsToBuy);
                             final BitSet itemsToBuy2 = (BitSet) state.itemsToBuy.clone();
                             itemsToBuy2.andNot(itemsToBuy);
 
-                            final int itemsPrice = storeItemsToBuy.stream().mapToInt(item -> item.price).sum();
-                            final boolean isGoingHome = itemsToBuy2.isEmpty() ||
-                                                        storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable);
+                            final int itemsPrice = store.getPriceSum(storeItemsToBuy);
+                            final boolean isGoingHome = itemsToBuy2.isEmpty() || isPerishable(itemsToBuy);
                             final double cost = itemsPrice + priceOfGasToStore + (isGoingHome ? priceOfGasToHome : 0);
                             final Action action = () -> cost;
 
@@ -168,9 +172,16 @@ public class ShoppingPlan {
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
                 }
+
             }).stream().mapToDouble(Action::cost).sum();
             System.out.println("States explored: " + search.statesExplored());
             return minimumSpend;
+        }
+
+        private boolean isPerishable(final BitSet items) {
+            final BitSet perishableItems = (BitSet) items.clone();
+            perishableItems.and(this.perishableItems);
+            return !perishableItems.isEmpty();
         }
 
         private static class Item implements Comparable<Item> {
@@ -209,6 +220,8 @@ public class ShoppingPlan {
             private final short      yPos;
             private final List<Item> items;
             private final double[]   goStorePrices; // last one reserved for home
+            private final short[]    itemsPriceSums;
+            private final BitSet[]   itemsCaseItems;
 
             private Store(final String s, final List<Store> stores) {
                 final String[] store = s.split(" ", 3);
@@ -225,10 +238,29 @@ public class ShoppingPlan {
                     store2.goStorePrices[stores.size()] = goStorePrice;
                     goStorePrices[s2] = goStorePrice;
                 }
+                itemsPriceSums = new short[1 << items.size()];
+                itemsCaseItems = new BitSet[1 << items.size()];
+                for (int i = 1; i < 1 << items.size(); i++) {
+                    final int finalI = i;
+                    itemsCaseItems[i] = new BitSet(Case.this.items.size());
+                    BitSet.valueOf(new long[]{i}).stream().forEach(storeItemIndex -> {
+                        final Item item = items.get(storeItemIndex);
+                        itemsPriceSums[finalI] += item.price;
+                        itemsCaseItems[finalI].set(item.item.index);
+                    });
+                }
+            }
+
+            private BitSet getItemBitSet(final BitSet storeItems) {
+                return itemsCaseItems[(int) storeItems.toLongArray()[0]];
             }
 
             private double goStorePrice(final Store store2) {
                 return goStorePrices[stores.indexOf(store2)];
+            }
+
+            private int getPriceSum(final BitSet storeItems) {
+                return itemsPriceSums[(int) storeItems.toLongArray()[0]];
             }
 
             private class Item {
@@ -255,10 +287,6 @@ public class ShoppingPlan {
 
                 private boolean isToBuy(final State state) {
                     return state.itemsToBuy.get(item.index);
-                }
-
-                private boolean isPerishable() {
-                    return item.perishable;
                 }
             }
         }
