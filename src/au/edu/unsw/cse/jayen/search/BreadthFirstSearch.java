@@ -23,10 +23,10 @@ public class BreadthFirstSearch<State> implements Search<State> {
    /*
     * (non-Javadoc)
     * 
-    * @see Search#nodesExplored()
+    * @see Search#statesExplored()
     */
    @Override
-   public int nodesExplored() {
+   public int statesExplored() {
       return closedSet.size();
    }
 

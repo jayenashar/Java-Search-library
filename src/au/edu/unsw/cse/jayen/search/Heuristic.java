@@ -8,7 +8,6 @@ package au.edu.unsw.cse.jayen.search;
  */
 public interface Heuristic<State> {
 
-   // 244 nodes in the sample
    /**
     * the always-admissible zero heuristic
     * 

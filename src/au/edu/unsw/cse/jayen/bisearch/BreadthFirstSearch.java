@@ -31,10 +31,10 @@ public class BreadthFirstSearch<State> implements Search<State> {
    /*
     * (non-Javadoc)
     * 
-    * @see Search#nodesExplored()
+    * @see Search#statesExplored()
     */
    @Override
-   public int nodesExplored() {
+   public int statesExplored() {
       return closedSetInitial.size() + closedSetGoal.size();
    }
 
@@ -105,7 +105,7 @@ public class BreadthFirstSearch<State> implements Search<State> {
     * @param parentGoal
     *           a mapping from states to their successor
     * @param current
-    *           the node to traverse from
+    *           the state to traverse from
     * @return a path from an initial state to a goal state
     */
    private List<Action> calculatePath(

@@ -1,5 +1,11 @@
 package au.edu.unsw.cse.jayen.search.examples.penplotter;
 
+import au.edu.unsw.cse.jayen.search.AStarSearch;
+import au.edu.unsw.cse.jayen.search.Action;
+import au.edu.unsw.cse.jayen.search.Heuristic;
+import au.edu.unsw.cse.jayen.search.Search;
+import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
+
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
@@ -9,12 +15,6 @@ import java.util.Collection;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Scanner;
-
-import au.edu.unsw.cse.jayen.search.AStarSearch;
-import au.edu.unsw.cse.jayen.search.Action;
-import au.edu.unsw.cse.jayen.search.Heuristic;
-import au.edu.unsw.cse.jayen.search.Search;
-import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
 
 /**
  * implements the pen plotter from UNSW's COMP2911 11s2 ass2.
@@ -88,7 +88,7 @@ public class PenPlotter {
     */
    private static void printOutput(final Search search,
          final List<Action> actions) {
-      System.out.println(search.nodesExplored() + " nodes explored");
+      System.out.println(search.statesExplored() + " states explored");
       double cost = 0;
       for (final Action action : actions)
          cost += action.cost();

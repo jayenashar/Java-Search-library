@@ -9,7 +9,7 @@ import au.edu.unsw.cse.jayen.search.Heuristic;
  * 
  */
 public class PenPlotterHeuristics {
-   // 107 nodes in the sample
+   // 107 states in the sample
    /**
     * the cost of drawing the remaining lines. O(n) where n is the number of
     * remaining lines. Admissible because you have to at least draw the
@@ -30,7 +30,7 @@ public class PenPlotterHeuristics {
       }
    }
 
-   // 223 nodes in the sample
+   // 223 states in the sample
    /**
     * the cost of moving from where the pen is to the nearest remaining line.
     * O(n) where n is the number of remaining lines. Admissible because you have
@@ -52,7 +52,7 @@ public class PenPlotterHeuristics {
       }
    }
 
-   // 182 nodes in the sample
+   // 182 states in the sample
    /**
     * the cost of moving from where the pen is to the farthest remaining line
     * endpoint. O(n) where n is the number of remaining lines. Admissible
@@ -73,7 +73,7 @@ public class PenPlotterHeuristics {
       }
    }
 
-   // 41 nodes in the sample
+   // 41 states in the sample
    /**
     * the cost of moving from where the pen is to the nearest remaining line
     * plus the cost of drawing the remaining lines. O(n) where n is the number
@@ -98,7 +98,7 @@ public class PenPlotterHeuristics {
       }
    }
 
-   // 41 nodes in the sample
+   // 41 states in the sample
    /**
     * the cost of moving from where the pen is to the nearest remaining line
     * plus the cost of the minimum spanning tree connecting the remaining lines.
@@ -124,7 +124,7 @@ public class PenPlotterHeuristics {
       }
    }
 
-   // 107 nodes in the sample
+   // 107 states in the sample
    /**
     * the cost of the minimum spanning tree connecting the remaining lines.
     * O(n^2) where n is the number of remaining lines. Admissible because you

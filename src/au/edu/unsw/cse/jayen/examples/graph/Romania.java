@@ -27,10 +27,10 @@ public class Romania {
       final au.edu.unsw.cse.jayen.search.Search search = new AStarSearch(
             new RomaniaHeuristics.Bucharest());
       List<Action> actions = search.search(sssp);
-      Romania.printOutput(search.nodesExplored(), actions);
+      Romania.printOutput(search.statesExplored(), actions);
       final au.edu.unsw.cse.jayen.bisearch.Search bisearch = new UniformCostSearch();
       actions = bisearch.search(sssp);
-      Romania.printOutput(bisearch.nodesExplored(), actions);
+      Romania.printOutput(bisearch.statesExplored(), actions);
    }
 
    /**

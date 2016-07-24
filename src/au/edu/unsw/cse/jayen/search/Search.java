@@ -10,11 +10,11 @@ import java.util.List;
  */
 public interface Search<State> {
    /**
-    * the number of nodes expanded by the search() function
+    * the number of states expanded by the search() function
     * 
-    * @return the number of nodes expanded by the search() function
+    * @return the number of states expanded by the search() function
     */
-   int nodesExplored();
+   int statesExplored();
 
    /**
     * searches from the initial states to a goal state
