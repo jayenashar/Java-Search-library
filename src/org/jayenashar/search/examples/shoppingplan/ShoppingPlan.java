@@ -53,37 +53,6 @@ public class ShoppingPlan {
                 .println("Case #" + (caseIndex + 1) + ": " + String.format("%.7f", minimumSpends[caseIndex])));
     }
 
-    private static class Item implements Comparable<Item> {
-        private final String  name;
-        private final boolean perishable;
-        private final int index;
-        private short minPrice = Short.MAX_VALUE;
-
-        private Item(final String s, final int index) {
-            this(s.replaceFirst("!$", ""), s.endsWith("!"), index);
-        }
-
-        private Item(final String name, final boolean perishable, final int index) {
-            this.name = name;
-            this.perishable = perishable;
-            this.index = index;
-        }
-
-        private short getMinPrice() {
-            return minPrice;
-        }
-
-        private void setMinPrice(short price) {
-            if (price < minPrice)
-                minPrice = price;
-        }
-
-        @Override
-        public int compareTo(final Item o) {
-            return name.compareTo(o.name);
-        }
-    }
-
     private static class Case {
         private final short       priceOfGas;
         private final List<Item>  items;
@@ -110,12 +79,16 @@ public class ShoppingPlan {
         private double minimumSpend() {
             final AStarSearch<State> search = new AStarSearch<>(state -> {
                 final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
-                final double goNearestStoreAndHome = stores.stream().mapToDouble(store -> (state.isHome() ?
-                                                                                           store.goHomeDistance() :
-                                                                                           Math.hypot(store.xPos - state.xPos,
-                                                                                                      store.yPos - state.yPos)) +
-                                                                                          store.goHomeDistance()).min()
-                                                           .getAsDouble();
+                final double goNearestStoreAndHome = stores.stream().filter(store -> !state.storesVisited.contains(store)
+                                                                            // somehow filtering out stores that have no items we
+                                                                            // still need to buy makes it explore MORE states
+                /* && store.items.stream().anyMatch(storeItem -> state.itemsToBuy.get(storeItem.item.index))*/)
+                                                           .mapToDouble(store -> (state.isHome() ?
+                                                                                  store.goHomeDistance() :
+                                                                                  Math.hypot(store.xPos - state.xPos,
+                                                                                             store.yPos - state.yPos)) +
+                                                                                 store.goHomeDistance()).min()
+                                                           .orElse(Double.POSITIVE_INFINITY);
                 return itemsMinPrice + goNearestStoreAndHome * priceOfGas;
             }, 1.0000001);
             final double minimumSpend = search.search(new StateSpaceSearchProblem<State>() {
@@ -202,6 +175,37 @@ public class ShoppingPlan {
             return minimumSpend;
         }
 
+        private static class Item implements Comparable<Item> {
+            private final String  name;
+            private final boolean perishable;
+            private final int     index;
+            private short minPrice = Short.MAX_VALUE;
+
+            private Item(final String s, final int index) {
+                this(s.replaceFirst("!$", ""), s.endsWith("!"), index);
+            }
+
+            private Item(final String name, final boolean perishable, final int index) {
+                this.name = name;
+                this.perishable = perishable;
+                this.index = index;
+            }
+
+            private short getMinPrice() {
+                return minPrice;
+            }
+
+            private void setMinPrice(short price) {
+                if (price < minPrice)
+                    minPrice = price;
+            }
+
+            @Override
+            public int compareTo(final Item o) {
+                return name.compareTo(o.name);
+            }
+        }
+
         private class Store {
             private final short      xPos;
             private final short      yPos;
@@ -227,8 +231,8 @@ public class ShoppingPlan {
             }
 
             private class Item {
-                private final ShoppingPlan.Item item;
-                private final short             price;
+                private final Case.Item item;
+                private final short     price;
 
                 private Item(final String s) {
                     this(s.split(":"));
@@ -242,7 +246,7 @@ public class ShoppingPlan {
                     this(Case.this.items.stream().filter(item -> item.name.equals(name)).findAny().get(), price);
                 }
 
-                private Item(final ShoppingPlan.Item item, final short price) {
+                private Item(final Case.Item item, final short price) {
                     this.item = item;
                     this.price = price;
                     item.setMinPrice(price);
