@@ -144,15 +144,11 @@ public class ShoppingPlan {
                                     }
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
+                            final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
                             final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable) ||
                                                         state.itemsToBuy.size() == storeItemsToBuy.size();
-                            final Action action = () -> {
-                                final double itemsPrice = storeItemsToBuy.stream().mapToDouble(item -> item.price).sum();
-                                if (isGoingHome)
-                                    return itemsPrice + priceOfGasToStore + priceOfGasToHome;
-                                else
-                                    return itemsPrice + priceOfGasToStore;
-                            };
+                            final double cost = itemsPrice + priceOfGasToStore + (isGoingHome ? priceOfGasToHome : 0);
+                            final Action action = () -> cost;
                             final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> storeItem.item).collect(
                                     Collectors.toList());
                             final List<Item> itemsBought = new ArrayList<>(state.itemsBought.size() + itemsToBuy.size());
@@ -162,7 +158,7 @@ public class ShoppingPlan {
                             itemsToBuy2.addAll(state.itemsToBuy);
                             itemsToBuy2.removeAll(itemsToBuy);
                             final State state2 = new State(storesVisited, itemsBought, itemsToBuy2, isGoingHome ? 0 : store.xPos,
-                                                           isGoingHome ? 0 : store.yPos, state.spend + action.cost());
+                                                           isGoingHome ? 0 : store.yPos, state.spend + cost);
                             return new ActionStatePair<>(action, state2);
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
