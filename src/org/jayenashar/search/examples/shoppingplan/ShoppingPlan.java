@@ -101,11 +101,17 @@ public class ShoppingPlan {
         }
 
         private double minimumSpend() {
-            return new AStarSearch<State>(state -> {
+            final AStarSearch<State> search = new AStarSearch<>(state -> {
                 final int itemsMinPrice = state.itemsToBuy.stream().mapToInt(Item::getMinPrice).sum();
-                final double goHomePrice = Math.hypot(state.xPos, state.yPos) * priceOfGas;
-                return itemsMinPrice + goHomePrice;
-            }, 1.0000001).search(new StateSpaceSearchProblem<State>() {
+                final double goNearestStoreAndHome = stores.stream().mapToDouble(store -> (state.isHome() ?
+                                                                                           store.goHomeDistance() :
+                                                                                           Math.hypot(store.xPos - state.xPos,
+                                                                                                      store.yPos - state.yPos)) +
+                                                                                          store.goHomeDistance()).min()
+                                                           .getAsDouble();
+                return itemsMinPrice + goNearestStoreAndHome * priceOfGas;
+            }, 1.0000001);
+            final double minimumSpend = search.search(new StateSpaceSearchProblem<State>() {
                 @Override
                 public Iterable<State> initialStates() {
                     return Collections.singleton(new State(Collections.emptyList(),
@@ -118,7 +124,7 @@ public class ShoppingPlan {
 
                 @Override
                 public boolean isGoal(final State state) {
-                    return state.itemsToBuy.size() == 0 && state.xPos == 0 && state.yPos == 0;
+                    return state.itemsToBuy.size() == 0;
                 }
 
                 @Override
@@ -127,7 +133,7 @@ public class ShoppingPlan {
                         // calculate these once per store, even if i may not go home
                         final double priceOfGasToStore = Math.hypot(state.xPos - store.xPos, state.yPos - store.yPos) *
                                                          Case.this.priceOfGas;
-                        final double priceOfGasToHome = Math.hypot(store.xPos, store.yPos) * Case.this.priceOfGas;
+                        final double priceOfGasToHome = store.goHomePrice();
                         final List<Store> storesVisited = new ArrayList<>(state.storesVisited.size() + 1);
                         storesVisited.addAll(state.storesVisited);
                         storesVisited.add(store);
@@ -160,18 +166,20 @@ public class ShoppingPlan {
                                 }).spliterator(), false);
                         return allCombinationsOfItems.map(storeItemsToBuy -> {
                             final int itemsPrice = storeItemsToBuy.stream().mapToInt(item -> item.price).sum();
-                            final boolean isGoingHome = storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable) ||
-                                                        state.itemsToBuy.size() == storeItemsToBuy.size();
+                            final boolean isGoingHome = state.itemsToBuy.size() == storeItemsToBuy.size() ||
+                                                        storeItemsToBuy.stream().anyMatch(Store.Item::isPerishable);
                             final double cost = itemsPrice + priceOfGasToStore + (isGoingHome ? priceOfGasToHome : 0);
-                            final Action action = () -> cost;
-                            final List<Item> itemsToBuy = storeItemsToBuy.stream().map(storeItem -> storeItem.item).collect(
-                                    Collectors.toList());
+
+                            final List<Item> itemsToBuy = new ArrayList<>(storeItemsToBuy.size());
+                            storeItemsToBuy.stream().map(storeItem -> storeItem.item).forEach(itemsToBuy::add);
                             final List<Item> itemsBought = new ArrayList<>(state.itemsBought.size() + itemsToBuy.size());
                             itemsBought.addAll(state.itemsBought);
                             itemsBought.addAll(itemsToBuy);
                             final List<Item> itemsToBuy2 = new ArrayList<>(state.itemsToBuy.size() - itemsToBuy.size());
                             itemsToBuy2.addAll(state.itemsToBuy);
                             itemsToBuy2.removeAll(itemsToBuy);
+
+                            final Action action = () -> cost;
                             final State state2 = new State(storesVisited,
                                                            itemsBought,
                                                            itemsToBuy2,
@@ -183,18 +191,32 @@ public class ShoppingPlan {
                     }).flatMap(Function.identity()).collect(Collectors.toList());
                 }
             }).stream().mapToDouble(Action::cost).sum();
+            System.out.println("States explored: " + search.statesExplored());
+            return minimumSpend;
         }
 
         private class Store {
             private final short      xPos;
             private final short      yPos;
             private final List<Item> items;
+            private final double     goHomePrice;
+            private final double     goHomeDistance;
 
             private Store(final String s) {
                 final String[] store = s.split(" ", 3);
                 xPos = Short.parseShort(store[0]);
                 yPos = Short.parseShort(store[1]);
                 items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
+                goHomeDistance = Math.hypot(xPos, yPos);
+                goHomePrice = goHomeDistance * priceOfGas;
+            }
+
+            private double goHomeDistance() {
+                return goHomeDistance;
+            }
+
+            private double goHomePrice() {
+                return goHomePrice;
             }
 
             private class Item {
@@ -268,6 +290,10 @@ public class ShoppingPlan {
                        yPos == state.yPos &&
                        Objects.equals(itemsBought, state.itemsBought) &&
                        Objects.equals(itemsToBuy, state.itemsToBuy);
+            }
+
+            private boolean isHome() {
+                return xPos == 0 && yPos == 0;
             }
         }
     }
