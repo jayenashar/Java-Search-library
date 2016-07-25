@@ -145,7 +145,8 @@ public class ShoppingPlan {
                                                            itemsToBuy,
                                                            home,
                                                            0,
-                                                           false));
+                                                           false,
+                                                           null));
                 }
 
                 @Override
@@ -173,7 +174,8 @@ public class ShoppingPlan {
                                                            state.itemsToBuy,
                                                            home,
                                                            state.spend + cost,
-                                                           false);
+                                                           false,
+                                                           null);
                             return Stream.of(new ActionStatePair<>(action, state2));
                         }
                         // calculate these once per store, even if i may not go home
@@ -191,8 +193,17 @@ public class ShoppingPlan {
                         }
                         assert storesVisited.contains(store);
 
-                        final List<Store.Item> itemsMayBy = store.items.stream().filter(storeItem -> storeItem.isToBuy(state))
-                                                                       .collect(Collectors.toList());
+                        final int fromIndex;
+                        if (state.lastBought == null || state.store != store) {
+                            fromIndex = 0;
+                        } else {
+                            fromIndex = store.items.indexOf(state.lastBought) + 1;
+                            assert fromIndex > 0;
+                        }
+                        final List<Store.Item> itemsMayBy = store.items.subList(
+                                fromIndex,
+                                store.items.size()).stream().filter(storeItem -> storeItem.isToBuy(state)).collect(Collectors
+                                                                                                                           .toList());
                         return itemsMayBy.stream().map(storeItemToBuy -> {
                             final BitSet itemsBought = (BitSet) state.itemsBought.clone();
                             itemsBought.set(storeItemToBuy.item.index);
@@ -210,7 +221,8 @@ public class ShoppingPlan {
                                                            itemsToBuy2,
                                                            isGoingHome ? home : store,
                                                            state.spend + cost,
-                                                           hasPerishable && !isGoingHome);
+                                                           hasPerishable && !isGoingHome,
+                                                           isGoingHome ? null : storeItemToBuy);
                             return new ActionStatePair<>(action, state2);
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
@@ -327,19 +339,22 @@ public class ShoppingPlan {
             private final Store       store;
             private final double      spend;
             private final boolean     hasPerishable;
+            private final Store.Item  lastBought;
 
             private State(final List<Store> storesVisited,
                           final BitSet itemsBought,
                           final BitSet itemsToBuy,
                           final Store store,
                           final double spend,
-                          final boolean hasPerishable) {
+                          final boolean hasPerishable,
+                          final Store.Item lastBought) {
                 this.storesVisited = storesVisited;
                 this.itemsBought = itemsBought;
                 this.itemsToBuy = itemsToBuy;
                 this.store = store;
                 this.spend = spend;
                 this.hasPerishable = hasPerishable;
+                this.lastBought = lastBought;
             }
 
             @Override
