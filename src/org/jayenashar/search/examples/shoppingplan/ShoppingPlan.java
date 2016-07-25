@@ -141,7 +141,6 @@ public class ShoppingPlan {
                     final BitSet itemsToBuy = new BitSet(items.size());
                     itemsToBuy.set(0, items.size());
                     return Collections.singleton(new State(Collections.emptyList(),
-                                                           new BitSet(items.size()),
                                                            itemsToBuy,
                                                            home,
                                                            0,
@@ -170,7 +169,6 @@ public class ShoppingPlan {
                             final double cost = state.store.goStorePrice(home);
                             final Action action = () -> cost;
                             final State state2 = new State(state.storesVisited,
-                                                           state.itemsBought,
                                                            state.itemsToBuy,
                                                            home,
                                                            state.spend + cost,
@@ -205,8 +203,6 @@ public class ShoppingPlan {
                                 store.items.size()).stream().filter(storeItem -> storeItem.isToBuy(state)).collect(Collectors
                                                                                                                            .toList());
                         return itemsMayBy.stream().map(storeItemToBuy -> {
-                            final BitSet itemsBought = (BitSet) state.itemsBought.clone();
-                            itemsBought.set(storeItemToBuy.item.index);
                             final BitSet itemsToBuy2 = (BitSet) state.itemsToBuy.clone();
                             itemsToBuy2.clear(storeItemToBuy.item.index);
                             final boolean hasPerishable = state.hasPerishable || storeItemToBuy.item.perishable;
@@ -217,7 +213,6 @@ public class ShoppingPlan {
                             final Action action = () -> cost;
 
                             final State state2 = new State(storesVisited,
-                                                           itemsBought,
                                                            itemsToBuy2,
                                                            isGoingHome ? home : store,
                                                            state.spend + cost,
@@ -334,7 +329,6 @@ public class ShoppingPlan {
 
         private class State {
             private final List<Store> storesVisited;
-            private final BitSet      itemsBought;
             private final BitSet      itemsToBuy;
             private final Store       store;
             private final double      spend;
@@ -342,14 +336,12 @@ public class ShoppingPlan {
             private final Store.Item  lastBought;
 
             private State(final List<Store> storesVisited,
-                          final BitSet itemsBought,
                           final BitSet itemsToBuy,
                           final Store store,
                           final double spend,
                           final boolean hasPerishable,
                           final Store.Item lastBought) {
                 this.storesVisited = storesVisited;
-                this.itemsBought = itemsBought;
                 this.itemsToBuy = itemsToBuy;
                 this.store = store;
                 this.spend = spend;
@@ -359,7 +351,7 @@ public class ShoppingPlan {
 
             @Override
             public int hashCode() {
-                return Objects.hash(itemsBought, itemsToBuy, store, hasPerishable);
+                return Objects.hash(itemsToBuy, store, hasPerishable);
             }
 
             @Override
@@ -367,8 +359,7 @@ public class ShoppingPlan {
                 if (this == o) return true;
                 if (o == null || getClass() != o.getClass()) return false;
                 final State state = (State) o;
-                return Objects.equals(itemsBought, state.itemsBought) &&
-                       Objects.equals(itemsToBuy, state.itemsToBuy) &&
+                return Objects.equals(itemsToBuy, state.itemsToBuy) &&
                        Objects.equals(store, state.store) &&
                        Objects.equals(hasPerishable, state.hasPerishable);
             }
