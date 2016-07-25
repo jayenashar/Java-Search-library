@@ -86,18 +86,84 @@ public class ShoppingPlan {
         }
 
         private double minimumSpend() {
+            // case 1: 21787
             final AStarSearch<State> search = new AStarSearch<>(state -> {
                 final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
                 final double goNearestStoreAndHomePrice = stores.stream().filter(store -> !state.storesVisited.contains(store) &&
-                                                                                          store != home
-                                                                                 // somehow filtering out stores that have no items we
-                                                                                 // still need to buy makes it explore MORE states
-                /* && store.items.stream().anyMatch(storeItem -> state.itemsToBuy.get(storeItem.item.index))*/)
+                                                                                          store != home)
                                                                 .mapToDouble(store -> state.store.goStorePrice(store) +
                                                                                       store.goStorePrice(home)).min()
                                                                 .orElse(Double.POSITIVE_INFINITY);
                 return itemsMinPrice + goNearestStoreAndHomePrice;
             });
+//            // case 1: 23090
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> !state.storesVisited.contains(store) &&
+//                                                                                          store != home)
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return goNearestStoreAndHomePrice;
+//            });
+//            // case 1: 23457
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                final double goNearestStoreAndHomePrice = stores.stream()
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return itemsMinPrice + goNearestStoreAndHomePrice;
+//            });
+//            // case 1: 23457
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> !state.storesVisited.contains(store))
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return itemsMinPrice + goNearestStoreAndHomePrice;
+//            });
+//            // case 1: 26320
+//            // somehow filtering out stores that have no items we still need to buy makes it explore MORE states
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> !state.storesVisited.contains(store) &&
+//                                                                                          store != home &&
+//                                                                                          store.items.stream()
+//                                                                                                     .anyMatch(storeItem -> state.itemsToBuy
+//                                                                                                             .get(storeItem.item.index)))
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return itemsMinPrice + goNearestStoreAndHomePrice;
+//            });
+//            // case 1: 31581
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                return itemsMinPrice;
+//            });
+//            // case 1: 35855
+//            // somehow filtering out home makes it explore MORE states
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> store != home)
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return itemsMinPrice + goNearestStoreAndHomePrice;
+//            });
+//            // case 1: 39033
+//            // somehow filtering out stores that have no items we still need to buy makes it explore MORE states
+//            final AStarSearch<State> search = new AStarSearch<>(state -> {
+//                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+//                final double goNearestStoreAndHomePrice = stores.stream().filter(store -> store.items.stream()
+//                                                                                                     .anyMatch(storeItem -> state.itemsToBuy
+//                                                                                                             .get(storeItem.item.index)))
+//                                                                .mapToDouble(store -> state.store.goStorePrice(store) +
+//                                                                                      store.goStorePrice(home)).min()
+//                                                                .orElse(Double.POSITIVE_INFINITY);
+//                return itemsMinPrice + goNearestStoreAndHomePrice;
+//            });
             final double minimumSpend = search.search(new StateSpaceSearchProblem<State>() {
                 @Override
                 public Iterable<State> initialStates() {
