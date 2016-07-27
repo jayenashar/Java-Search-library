@@ -21,13 +21,13 @@ public class AStarSearch<State> implements Search<State> {
    /**
     * A wrapper class to store the best f & g for a given state, and also store h.
     * 
-    * @param <ActionStatePair>    the type of wrapped state
+    * @param <State>    the type of wrapped state
     */
-   private static class StateWrapper<ActionStatePair> implements Comparable<StateWrapper<ActionStatePair>> {
+   private static class StateWrapper<State> implements Comparable<StateWrapper<State>> {
       /**
        * the wrapped state
        */
-      private final ActionStatePair actionStatePair;
+      private final ActionStatePair<State> actionStatePair;
 
        /**
         * the costs for state
@@ -40,7 +40,7 @@ public class AStarSearch<State> implements Search<State> {
        * @param g        the cost from initial to state
        * @param h        the underestimated cost from state to goal
        */
-      private StateWrapper(final ActionStatePair actionStatePair, final double f, final double g, final double h) {
+      private StateWrapper(final ActionStatePair<State> actionStatePair, final double f, final double g, final double h) {
          this.actionStatePair = actionStatePair;
          this.f = f;
          this.g = g;
@@ -52,12 +52,12 @@ public class AStarSearch<State> implements Search<State> {
        *
        * @param actionStatePair    the wrapped state
        */
-      private StateWrapper(final ActionStatePair actionStatePair) {
+      private StateWrapper(final ActionStatePair<State> actionStatePair) {
          this(actionStatePair, 0, 0, 0);
       }
 
       @Override
-      public int compareTo(final StateWrapper<ActionStatePair> o) {
+      public int compareTo(final StateWrapper<State> o) {
          final int compare = Double.compare(f, o.f);
          if (compare != 0) {
             return compare;
@@ -69,7 +69,8 @@ public class AStarSearch<State> implements Search<State> {
       @Override
       public boolean equals(final Object o) {
          final StateWrapper<?> that = (StateWrapper<?>) o;
-         return Objects.equals(actionStatePair, that.actionStatePair);
+         final ActionStatePair other = (ActionStatePair) that.actionStatePair;
+         return actionStatePair.state.equals(other.state);
       }
 
       @Override
@@ -132,16 +133,16 @@ public class AStarSearch<State> implements Search<State> {
    @Override
    public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
       final Map<ActionStatePair<State>, ActionStatePair<State>> parent = new HashMap<>();
-      final PriorityQueue<StateWrapper<ActionStatePair<State>>> openSet = new PriorityQueue<>();
+      final PriorityQueue<StateWrapper<State>> openSet = new PriorityQueue<>();
       closedSet = new HashSet<>();
       for (final State state : sssp.initialStates()) {
          final double h = justAboveOne * heuristic.heuristic(state);
          final ActionStatePair<State> actionStatePair = new ActionStatePair<>(null, state);
-         final StateWrapper<ActionStatePair<State>> stateWrapper = new StateWrapper<>(actionStatePair, h, 0, h);
+         final StateWrapper<State> stateWrapper = new StateWrapper<>(actionStatePair, h, 0, h);
          openSet.add(stateWrapper);
       }
       while (!openSet.isEmpty()) {
-         StateWrapper<ActionStatePair<State>> currentWrapper = openSet.remove();
+         StateWrapper<State> currentWrapper = openSet.remove();
          ActionStatePair<State> current = currentWrapper.actionStatePair;
          closedSet.add(current.state);
          if (sssp.isGoal(current.state)) {
@@ -154,7 +155,7 @@ public class AStarSearch<State> implements Search<State> {
          for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
             if (closedSet.contains(neighbor.state))
                continue;
-            final StateWrapper<ActionStatePair<State>> neighborWrapper = openSet.get(new StateWrapper<>(neighbor));
+            final StateWrapper<State> neighborWrapper = openSet.get(new StateWrapper<>(neighbor));
             final double newG = currentWrapper.g + neighbor.action.cost();
             if (neighborWrapper == null) {
                final double h = justAboveOne
