@@ -143,7 +143,6 @@ public class ShoppingPlan {
                     return Collections.singleton(new State(Collections.emptyList(),
                                                            itemsToBuy,
                                                            home,
-                                                           0,
                                                            false,
                                                            null));
                 }
@@ -171,7 +170,6 @@ public class ShoppingPlan {
                             final State state2 = new State(state.storesVisited,
                                                            state.itemsToBuy,
                                                            home,
-                                                           state.spend + cost,
                                                            false,
                                                            null);
                             return Stream.of(new ActionStatePair<>(action, state2));
@@ -215,7 +213,6 @@ public class ShoppingPlan {
                             final State state2 = new State(storesVisited,
                                                            itemsToBuy2,
                                                            isGoingHome ? home : store,
-                                                           state.spend + cost,
                                                            hasPerishable && !isGoingHome,
                                                            isGoingHome ? null : storeItemToBuy);
                             return new ActionStatePair<>(action, state2);
@@ -331,27 +328,26 @@ public class ShoppingPlan {
             private final List<Store> storesVisited;
             private final BitSet      itemsToBuy;
             private final Store       store;
-            private final double      spend;
             private final boolean     hasPerishable;
             private final Store.Item  lastBought;
+            private final int         hash;
 
             private State(final List<Store> storesVisited,
                           final BitSet itemsToBuy,
                           final Store store,
-                          final double spend,
                           final boolean hasPerishable,
                           final Store.Item lastBought) {
                 this.storesVisited = storesVisited;
                 this.itemsToBuy = itemsToBuy;
                 this.store = store;
-                this.spend = spend;
                 this.hasPerishable = hasPerishable;
                 this.lastBought = lastBought;
+                hash = Objects.hash(itemsToBuy, store, hasPerishable);
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(itemsToBuy, store, hasPerishable);
+                return hash;
             }
 
             @Override
