@@ -68,8 +68,6 @@ public class AStarSearch<State> implements Search<State> {
 
       @Override
       public boolean equals(final Object o) {
-         if (this == o) return true;
-         if (o == null || getClass() != o.getClass()) return false;
          final StateWrapper<?> that = (StateWrapper<?>) o;
          return Objects.equals(actionStatePair, that.actionStatePair);
       }
