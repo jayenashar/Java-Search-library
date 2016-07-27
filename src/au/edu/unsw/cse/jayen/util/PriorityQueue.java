@@ -74,7 +74,8 @@ import java.util.*;
  * <p>This class is not a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>, but is a modified version of OpenJDK 7's
- * version of PriorityQueue.
+ * version of PriorityQueue.  The modifications provide better performance in
+ * some cases as well as {@code get} and {@code removeAndGet} methods.
  *
  * @since 1.5
  * @author Josh Bloch, Doug Lea, Jayen Ashar
@@ -382,6 +383,26 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * Removes a single instance of the specified element from this queue,
+     * if it is present.  More formally, removes an element {@code e} such
+     * that {@code o.equals(e)}, if this queue contains one or more such
+     * elements.  Returns {@code e} if and only if this queue contained
+     * the specified element (or equivalently, if this queue changed as a
+     * result of the call).
+     *
+     * @param o element to be removed from this queue, if present
+     * @return {@code e} if this queue changed as a result of the call
+     */
+    public E removeAndGet(Object o) {
+        int i = indexOf(o);
+        if (i == -1)
+            return null;
+        else {
+            return removeAt(i);
+        }
+    }
+
+    /**
      * Version of remove using reference equality, not equals.
      * Needed by iterator.remove.
      *
@@ -407,6 +428,21 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     public boolean contains(Object o) {
         return indexOf(o) != -1;
+    }
+
+    /**
+     * Returns an element <code>e</code> such that <code>o.equals(e)</code> if this
+     * queue contains an element equal to the specified element.
+     *
+     * @param o object to be checked for containment in this queue
+     * @return an element <code>e</code> such that <code>o.equals(e)</code> if this
+     *         queue contains an element equal to the specified element.
+     */
+    public E get(Object o) {
+        final int i = indexOf(o);
+        if (i != -1)
+            return (E) queue[i];
+        return null;
     }
 
     /**

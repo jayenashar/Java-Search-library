@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -19,50 +19,64 @@ import java.util.Set;
 public class AStarSearch<State> implements Search<State> {
 
    /**
-    * used by a priority queue in a* to compare f scores
+    * A wrapper class to store the best f & g for a given state, and also store h.
     * 
-    * @author jayen
+    * @param <ActionStatePair>    the type of wrapped state
     */
-   private class Comparator implements java.util.Comparator<ActionStatePair<State>> {
+   private static class StateWrapper<ActionStatePair> implements Comparable<StateWrapper<ActionStatePair>> {
       /**
-       * the table of f scores
+       * the wrapped state
        */
-      private final Map<State, Double> f;
+      private final ActionStatePair actionStatePair;
+
+       /**
+        * the costs for state
+        */
+       private final double f, g, h;
 
       /**
-       * the table of h scores
+       * @param actionStatePair    the wrapped state
+       * @param f        the total cost from initial to goal going through state
+       * @param g        the cost from initial to state
+       * @param h        the underestimated cost from state to goal
        */
-      private final Map<State, Double> h;
-
-      /**
-       * @param f
-       *           the table of f scores
-       * @param h
-       *           the table of h scores
-       */
-      public Comparator(final Map<State, Double> f, final Map<State, Double> h) {
+      private StateWrapper(final ActionStatePair actionStatePair, final double f, final double g, final double h) {
+         this.actionStatePair = actionStatePair;
          this.f = f;
+         this.g = g;
          this.h = h;
       }
 
-      /*
-       * (non-Javadoc)
-       * 
-       * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+      /**
+       * dummy constructor to create equal hashable wrappers that are not to be used for comparison
+       *
+       * @param actionStatePair    the wrapped state
        */
+      private StateWrapper(final ActionStatePair actionStatePair) {
+         this(actionStatePair, 0, 0, 0);
+      }
+
       @Override
-      public int compare(final ActionStatePair<State> o1, final ActionStatePair<State> o2) {
-         double diff = f.get(o1.state) - f.get(o2.state);
-         if (diff < 0)
-            return -2;
-         if (diff > 0)
-            return 2;
-         diff = h.get(o1.state) - h.get(o2.state);
-         if (diff < 0)
-            return -1;
-         if (diff > 0)
-            return 1;
-         return 0;
+      public int compareTo(final StateWrapper<ActionStatePair> o) {
+         final int compare = Double.compare(f, o.f);
+         if (compare != 0) {
+            return compare;
+         } else {
+            return Double.compare(h, o.h);
+         }
+      }
+
+      @Override
+      public boolean equals(final Object o) {
+         if (this == o) return true;
+         if (o == null || getClass() != o.getClass()) return false;
+         final StateWrapper<?> that = (StateWrapper<?>) o;
+         return Objects.equals(actionStatePair, that.actionStatePair);
+      }
+
+      @Override
+      public int hashCode() {
+         return Objects.hash(actionStatePair);
       }
    }
 
@@ -119,23 +133,18 @@ public class AStarSearch<State> implements Search<State> {
     */
    @Override
    public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
-      // This would be faster if I stored f & g in State, but that's bad design
-      final Map<State, Double> g = new HashMap<>();
-      final Map<State, Double> h = new HashMap<>();
-      final Map<State, Double> f = new HashMap<>();
       final Map<ActionStatePair<State>, ActionStatePair<State>> parent = new HashMap<>();
-      final Queue<ActionStatePair<State>> openSet = new PriorityQueue<>(
-              1, new Comparator(f, h));
+      final PriorityQueue<StateWrapper<ActionStatePair<State>>> openSet = new PriorityQueue<>();
       closedSet = new HashSet<>();
       for (final State state : sssp.initialStates()) {
-         g.put(state, 0.);
-         final double h2 = justAboveOne * heuristic.heuristic(state);
-         h.put(state, h2);
-         f.put(state, h2);
-         openSet.add(new ActionStatePair<>(null, state));
+         final double h = justAboveOne * heuristic.heuristic(state);
+         final ActionStatePair<State> actionStatePair = new ActionStatePair<>(null, state);
+         final StateWrapper<ActionStatePair<State>> stateWrapper = new StateWrapper<>(actionStatePair, h, 0, h);
+         openSet.add(stateWrapper);
       }
       while (!openSet.isEmpty()) {
-         ActionStatePair<State> current = openSet.remove();
+         StateWrapper<ActionStatePair<State>> currentWrapper = openSet.remove();
+         ActionStatePair<State> current = currentWrapper.actionStatePair;
          closedSet.add(current.state);
          if (sssp.isGoal(current.state)) {
             final List<Action> path = new ArrayList<>();
@@ -147,22 +156,22 @@ public class AStarSearch<State> implements Search<State> {
          for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
             if (closedSet.contains(neighbor.state))
                continue;
-            final Double oldG = g.get(neighbor.state);
-            final double newG = g.get(current.state) + neighbor.action.cost();
-            if (oldG == null) {
-               g.put(neighbor.state, newG);
-               final double h2 = justAboveOne
+            final StateWrapper<ActionStatePair<State>> neighborWrapper = openSet.get(new StateWrapper<>(neighbor));
+            final double newG = currentWrapper.g + neighbor.action.cost();
+            if (neighborWrapper == null) {
+               final double h = justAboveOne
                      * heuristic.heuristic(neighbor.state);
-               h.put(neighbor.state, h2);
-               f.put(neighbor.state, newG + h2);
                parent.put(neighbor, current);
-               openSet.add(neighbor);
-            } else if (newG < oldG) {
-               openSet.remove(neighbor);
-               g.put(neighbor.state, newG);
-               f.put(neighbor.state, newG + h.get(neighbor.state));
-               parent.put(neighbor, current);
-               openSet.add(neighbor);
+
+               openSet.add(new StateWrapper<>(neighbor, newG + h, newG, h));
+            } else {
+               final Double oldG = neighborWrapper.g;
+               if (newG < oldG) {
+                  openSet.remove(neighborWrapper);
+                  final double h = neighborWrapper.h;
+                  parent.put(neighbor, current);
+                  openSet.add(new StateWrapper<>(neighbor, newG + h, newG, h));
+               }
             }
          }
       }
