@@ -94,7 +94,7 @@ public class ShoppingPlan {
                     itemsToBuy.set(0, items.size());
                     final short[] itemsPrice = new short[items.size()];
                     Arrays.fill(itemsPrice, Short.MIN_VALUE);
-                    return Collections.singleton(new State(itemsToBuy, home, false));
+                    return Collections.singleton(new State(itemsToBuy, home, false, null));
                 }
 
                 @Override
@@ -127,16 +127,19 @@ public class ShoppingPlan {
                                         action = () -> price + priceOfGasToHomeToStore + store.goStorePrice(home);
                                     else
                                         action = () -> price + priceOfGasToStore + store.goStorePrice(home);
-                                    state2 = new State(itemsToBuy2, home, false);
+                                    state2 = new State(itemsToBuy2, home, false, null);
                                 } else if (store == state.store) {
                                     action = () -> price;
-                                    state2 = new State(itemsToBuy2, store, state.hasPerishable || storeItem.item.perishable);
+                                    state2 = new State(itemsToBuy2,
+                                                       store,
+                                                       state.hasPerishable || storeItem.item.perishable,
+                                                       storeItem);
                                 } else if (state.hasPerishable) {
                                     action = () -> price + priceOfGasToHomeToStore;
-                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable);
+                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable, storeItem);
                                 } else {
                                     action = () -> price + priceOfGasToStore;
-                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable);
+                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable, storeItem);
                                 }
 
                                 successors.add(new ActionStatePair<>(action, state2));
@@ -234,23 +237,27 @@ public class ShoppingPlan {
                 }
 
                 private boolean isToBuy(final State state) {
-                    return state.itemsToBuy.get(item.index);
+                    return state.itemsToBuy.get(item.index) &&
+                           (state.store != Store.this || state.lastBought == null || state.lastBought.item.index < item.index);
                 }
             }
         }
 
         private class State {
-            private final BitSet  itemsToBuy;
-            private final Store   store;
-            private final boolean hasPerishable;
-            private final int     hash;
+            private final BitSet     itemsToBuy;
+            private final Store      store;
+            private final boolean    hasPerishable;
+            private final Store.Item lastBought;
+            private final int        hash;
 
             private State(final BitSet itemsToBuy,
                           final Store store,
-                          final boolean hasPerishable) {
+                          final boolean hasPerishable,
+                          final Store.Item lastBought) {
                 this.itemsToBuy = itemsToBuy;
                 this.store = store;
                 this.hasPerishable = hasPerishable;
+                this.lastBought = lastBought;
                 hash = (itemsToBuy.hashCode() * stores.size() + store.index) * 2 + (hasPerishable ? 0 : 1);
             }
 
