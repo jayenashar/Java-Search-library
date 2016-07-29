@@ -10,12 +10,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * https://code.google.com/codejam/contest/32003/dashboard#s=p3
@@ -115,8 +119,7 @@ public class ShoppingPlan {
                                 final int item = storeItem.item.index;
                                 final short price = storeItem.price;
 
-                                final BitSet itemsToBuy2 = (BitSet) state.itemsToBuy.clone();
-                                itemsToBuy2.clear(item);
+                                final BitSet itemsToBuy2 = state.itemsToBuy.cloneClear(item);
 
                                 final Action action;
                                 final State state2;
@@ -275,6 +278,99 @@ public class ShoppingPlan {
                        Objects.equals(store, state.store) &&
                        Objects.equals(hasPerishable, state.hasPerishable);
             }
+        }
+    }
+
+    private static class BitSet {
+        private static final int WORD_MASK = -1;
+        private int word;
+
+        public BitSet(final int size) {
+            assert size <= Integer.SIZE;
+        }
+
+        public void set(int bitIndex, boolean value) {
+            if (value)
+                set(bitIndex);
+            else
+                clear(bitIndex);
+        }
+
+        public void clear(int bitIndex) {
+            word &= ~(1 << bitIndex);
+        }
+
+        public void set(int bitIndex) {
+            word |= (1 << bitIndex);
+        }
+
+        public void set(int fromIndex, int toIndex) {
+            long firstWordMask = WORD_MASK << fromIndex;
+            long lastWordMask = WORD_MASK >>> -toIndex;
+            word |= (firstWordMask & lastWordMask);
+        }
+
+        public IntStream stream() {
+            class BitSetIterator implements PrimitiveIterator.OfInt {
+                int next = nextSetBit(0);
+
+                @Override
+                public boolean hasNext() {
+                    return next != -1;
+                }
+
+                @Override
+                public int nextInt() {
+                    if (next != -1) {
+                        int ret = next;
+                        next = nextSetBit(next + 1);
+                        return ret;
+                    } else {
+                        throw new NoSuchElementException();
+                    }
+                }
+            }
+
+            return StreamSupport.intStream(
+                    () -> Spliterators.spliterator(
+                            new BitSetIterator(), Integer.bitCount(word),
+                            Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED),
+                    Spliterator.SIZED | Spliterator.SUBSIZED |
+                    Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED,
+                    false);
+        }
+
+        public int nextSetBit(int fromIndex) {
+            int word = this.word & (WORD_MASK << fromIndex);
+
+            if (word != 0)
+                return Integer.numberOfTrailingZeros(word);
+            return -1;
+        }
+
+        public boolean isEmpty() {
+            return word == 0;
+        }
+
+        public boolean get(int bitIndex) {
+            return (word & 1 << bitIndex) != 0;
+        }
+
+        private BitSet cloneClear(final int bitIndex) {
+            final BitSet result = new BitSet(Integer.SIZE);
+            result.word = word & ~(1 << bitIndex);
+            return result;
+        }
+
+        public boolean equals(Object obj) {
+            BitSet set = (BitSet) obj;
+            return word == set.word;
+        }
+
+        public int hashCode() {
+            int h = 1234;
+            h ^= word;
+            return h;
         }
     }
 }
