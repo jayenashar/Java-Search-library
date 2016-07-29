@@ -140,11 +140,14 @@ public class ShoppingPlan {
                 public Iterable<State> initialStates() {
                     final BitSet itemsToBuy = new BitSet(items.size());
                     itemsToBuy.set(0, items.size());
-                    return Collections.singleton(new State(Collections.emptyList(),
+                    final short[] itemsPrice = new short[items.size()];
+                    Arrays.fill(itemsPrice, Short.MIN_VALUE);
+                    return Collections.singleton(new State(new BitSet(stores.size()),
                                                            itemsToBuy,
                                                            home,
                                                            false,
-                                                           null));
+                                                           null,
+                                                           itemsPrice));
                 }
 
                 @Override
@@ -158,9 +161,10 @@ public class ShoppingPlan {
                     if (state.hasPerishable)
                         stores = Stream.of(state.store, home);
                     else
-                        stores = Case.this.stores.stream().filter(store -> (!state.storesVisited.contains(store) ||
-                                                                            state.store == store)
-                                                                           && store != home);
+                        stores = Case.this.stores.stream().filter(store -> (!state.storesVisited.get(store.index) ||
+                                                                            state.store == store) &&
+                                                                           store != home &&
+                                                                           !store.hasCheaper(state.itemsPrice));
                     return stores.map(store -> {
                         if (store == home) {
                             assert state.hasPerishable : "i should have forced myself home if there was another reason to go home" +
@@ -171,23 +175,23 @@ public class ShoppingPlan {
                                                            state.itemsToBuy,
                                                            home,
                                                            false,
-                                                           null);
+                                                           null,
+                                                           state.itemsPrice);
                             return Stream.of(new ActionStatePair<>(action, state2));
                         }
                         // calculate these once per store, even if i may not go home
                         final double priceOfGasToStore = state.store.goStorePrice(store);
-                        final List<Store> storesVisited;
-                        assert (state.store == store) == state.storesVisited.contains(store);
-                        assert state.store == home || state.storesVisited.contains(state.store);
+                        final BitSet storesVisited;
+                        assert (state.store == store) == state.storesVisited.get(store.index);
+                        assert state.store == home || state.storesVisited.get(state.store.index);
                         assert !state.hasPerishable || state.store == store : "i have a perishable and should not change stores";
                         if (store != state.store) {
-                            storesVisited = new ArrayList<>(state.storesVisited.size() + 1);
-                            storesVisited.addAll(state.storesVisited);
-                            storesVisited.add(store);
+                            storesVisited = (BitSet) state.storesVisited.clone();
+                            storesVisited.set(store.index);
                         } else {
                             storesVisited = state.storesVisited;
                         }
-                        assert storesVisited.contains(store);
+                        assert storesVisited.get(store.index);
 
                         final int fromIndex;
                         if (state.lastBought == null || state.store != store) {
@@ -201,20 +205,28 @@ public class ShoppingPlan {
                                 store.items.size()).stream().filter(storeItem -> storeItem.isToBuy(state)).collect(Collectors
                                                                                                                            .toList());
                         return itemsMayBy.stream().map(storeItemToBuy -> {
+                            final int item = storeItemToBuy.item.index;
+                            final short price = storeItemToBuy.price;
+
                             final BitSet itemsToBuy2 = (BitSet) state.itemsToBuy.clone();
-                            itemsToBuy2.clear(storeItemToBuy.item.index);
+                            itemsToBuy2.clear(item);
+
+                            final short[] itemsPrice = state.itemsPrice.clone();
+                            itemsPrice[item] = price;
+
                             final boolean hasPerishable = state.hasPerishable || storeItemToBuy.item.perishable;
 
                             final boolean isGoingHome = itemsToBuy2.isEmpty() || itemsMayBy.size() == 1 && hasPerishable;
                             final double cost =
-                                    storeItemToBuy.price + priceOfGasToStore + (isGoingHome ? store.goStorePrice(home) : 0);
+                                    price + priceOfGasToStore + (isGoingHome ? store.goStorePrice(home) : 0);
                             final Action action = () -> cost;
 
                             final State state2 = new State(storesVisited,
                                                            itemsToBuy2,
                                                            isGoingHome ? home : store,
                                                            hasPerishable && !isGoingHome,
-                                                           isGoingHome ? null : storeItemToBuy);
+                                                           isGoingHome ? null : storeItemToBuy,
+                                                           itemsPrice);
                             return new ActionStatePair<>(action, state2);
                         });
                     }).flatMap(Function.identity()).collect(Collectors.toList());
@@ -263,6 +275,7 @@ public class ShoppingPlan {
             private final double[]   goStorePrices; // last one reserved for home
             private final short[]    itemsPriceSums;
             private final BitSet[]   itemsCaseItems;
+            private final int        index;
 
             private Store(final String s, final List<Store> stores) {
                 final String[] store = s.split(" ", 3);
@@ -290,10 +303,19 @@ public class ShoppingPlan {
                         itemsCaseItems[finalI].set(item.item.index);
                     });
                 }
+                index = stores.size();
             }
 
             private double goStorePrice(final Store store2) {
                 return goStorePrices[stores.indexOf(store2)];
+            }
+
+            private boolean hasCheaper(final short[] itemsPrice) {
+                for (Item storeItem : items) {
+                    if (storeItem.price < itemsPrice[storeItem.item.index])
+                        return true;
+                }
+                return false;
             }
 
             private class Item {
@@ -325,23 +347,26 @@ public class ShoppingPlan {
         }
 
         private class State {
-            private final List<Store> storesVisited;
+            private final BitSet      storesVisited;
             private final BitSet      itemsToBuy;
             private final Store       store;
             private final boolean     hasPerishable;
             private final Store.Item  lastBought;
             private final int         hash;
+            private final short[]     itemsPrice;
 
-            private State(final List<Store> storesVisited,
+            private State(final BitSet storesVisited,
                           final BitSet itemsToBuy,
                           final Store store,
                           final boolean hasPerishable,
-                          final Store.Item lastBought) {
+                          final Store.Item lastBought,
+                          final short[] itemsPrice) {
                 this.storesVisited = storesVisited;
                 this.itemsToBuy = itemsToBuy;
                 this.store = store;
                 this.hasPerishable = hasPerishable;
                 this.lastBought = lastBought;
+                this.itemsPrice = itemsPrice;
                 hash = Objects.hash(itemsToBuy, store, hasPerishable);
             }
 
