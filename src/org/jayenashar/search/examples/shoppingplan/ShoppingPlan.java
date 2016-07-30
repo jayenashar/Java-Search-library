@@ -17,7 +17,6 @@ import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -116,13 +115,17 @@ public class ShoppingPlan {
                         final double priceOfGasToHomeToStore = state.store.goStorePrice(home) + home.goStorePrice(store);
 
                         final BitSet itemsToBuy2 = new BitSet(state.itemsToBuy);
-                        boolean perishable2 = false;
+                        final boolean perishable2 = false;
                         short price2 = 0;
-                        for (Store.Item storeItem : store.items) {
-                            if (storeItem.isToBuyNow(state)) {
-                                itemsToBuy2.clear(storeItem.item.index);
-                                perishable2 |= storeItem.item.perishable;
-                                price2 += storeItem.price;
+                        if (state.store != store) {
+                            for (Store.Item storeItem : store.items) {
+                                if (itemsToBuy2.get(storeItem.item.index) &&
+                                    storeItem.price <= storeItem.item.getMinPrice() &&
+                                    !storeItem.item.perishable) {
+                                    itemsToBuy2.clear(storeItem.item.index);
+//                                perishable2 |= storeItem.item.perishable;
+                                    price2 += storeItem.price;
+                                }
                             }
                         }
 
@@ -138,11 +141,11 @@ public class ShoppingPlan {
                                          price2);
                         else
                             for (Store.Item storeItem : store.items) {
-                                if (itemsToBuy2.get(storeItem.item.index) && storeItem.isToBuy(state)) {
+                                if (storeItem.isToBuy(state)) {
                                     final int itemToBuy3 = storeItem.item.index;
-                                    final BitSet itemsToBuy3 = itemsToBuy2.cloneClear(itemToBuy3);
-                                    final boolean perishable3 = perishable2 || storeItem.item.perishable;
-                                    final int price3 = price2 + storeItem.price;
+                                    final BitSet itemsToBuy3 = state.itemsToBuy.cloneClear(itemToBuy3);
+                                    final boolean perishable3 = storeItem.item.perishable;
+                                    final int price3 = storeItem.price;
 
                                     addSuccessor(state,
                                                  successors,
@@ -229,20 +232,20 @@ public class ShoppingPlan {
         }
 
         private class Store {
-            private final short      xPos;
-            private final short      yPos;
-            private final List<Item> items;
-            private final double[]   goStorePrices; // last one reserved for home
-            private       int        index;
+            private final short    xPos;
+            private final short    yPos;
+            private final Item[]   items;
+            private final double[] goStorePrices; // last one reserved for home
+            private       int      index;
 
             private Store(final String s, final List<Store> stores) {
                 final String[] store = s.split(" ", 3);
                 xPos = Short.parseShort(store[0]);
                 yPos = Short.parseShort(store[1]);
                 if (store[2].isEmpty())
-                    items = Collections.emptyList();
+                    items = new Item[0];
                 else
-                    items = Arrays.stream(store[2].split(" ")).map(Item::new).collect(Collectors.toList());
+                    items = Arrays.stream(store[2].split(" ")).map(Item::new).toArray(Item[]::new);
                 goStorePrices = new double[numStores + 1];
                 for (int s2 = 0; s2 < stores.size(); s2++) {
                     Store store2 = stores.get(s2);
@@ -277,10 +280,6 @@ public class ShoppingPlan {
                     this.item = item;
                     this.price = price;
                     item.setMinPrice(price);
-                }
-
-                private boolean isToBuyNow(final State state) {
-                    return isToBuy(state) && price <= item.getMinPrice() && !item.perishable;
                 }
 
                 private boolean isToBuy(final State state) {
@@ -410,6 +409,7 @@ public class ShoppingPlan {
             return result;
         }
 
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         public boolean equals(Object obj) {
             BitSet set = (BitSet) obj;
             return word == set.word;

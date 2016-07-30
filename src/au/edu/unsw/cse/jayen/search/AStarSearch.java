@@ -4,10 +4,8 @@ import au.edu.unsw.cse.jayen.util.PriorityQueue;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -34,17 +32,28 @@ public class AStarSearch<State> implements Search<State> {
         */
        private final double f, g, h;
 
+       /**
+        * the previous state
+        */
+       private final StateWrapper<State> predecessor;
+
       /**
        * @param actionStatePair    the wrapped state
        * @param f        the total cost from initial to goal going through state
        * @param g        the cost from initial to state
        * @param h        the underestimated cost from state to goal
+       * @param predecessor             the previous state
        */
-      private StateWrapper(final ActionStatePair<State> actionStatePair, final double f, final double g, final double h) {
+      private StateWrapper(final ActionStatePair<State> actionStatePair,
+                           final double f,
+                           final double g,
+                           final double h,
+                           final StateWrapper<State> predecessor) {
          this.actionStatePair = actionStatePair;
          this.f = f;
          this.g = g;
          this.h = h;
+         this.predecessor = predecessor;
       }
 
       /**
@@ -53,7 +62,7 @@ public class AStarSearch<State> implements Search<State> {
        * @param actionStatePair    the wrapped state
        */
       private StateWrapper(final ActionStatePair<State> actionStatePair) {
-         this(actionStatePair, 0, 0, 0);
+         this(actionStatePair, 0, 0, 0, null);
       }
 
       @Override
@@ -79,7 +88,6 @@ public class AStarSearch<State> implements Search<State> {
       }
    }
 
-   // This would be faster if I stored visited in State, but that's bad design
    /**
     * the set of expanded states
     */
@@ -132,44 +140,41 @@ public class AStarSearch<State> implements Search<State> {
     */
    @Override
    public List<Action> search(final StateSpaceSearchProblem<State> sssp) {
-      final Map<ActionStatePair<State>, ActionStatePair<State>> parent = new HashMap<>();
       final PriorityQueue<StateWrapper<State>> openSet = new PriorityQueue<>();
       closedSet = new HashSet<>();
       for (final State state : sssp.initialStates()) {
          final double h = justAboveOne * heuristic.heuristic(state);
          final ActionStatePair<State> actionStatePair = new ActionStatePair<>(null, state);
-         final StateWrapper<State> stateWrapper = new StateWrapper<>(actionStatePair, h, 0, h);
+         final StateWrapper<State> stateWrapper = new StateWrapper<>(actionStatePair, h, 0, h, null);
          openSet.add(stateWrapper);
       }
       while (!openSet.isEmpty()) {
          StateWrapper<State> currentWrapper = openSet.remove();
-         ActionStatePair<State> current = currentWrapper.actionStatePair;
-         closedSet.add(current.state);
-         if (sssp.isGoal(current.state)) {
+         final State currentState = currentWrapper.actionStatePair.state;
+         closedSet.add(currentState);
+         if (sssp.isGoal(currentState)) {
             final List<Action> path = new ArrayList<>();
-            for (; current.action != null; current = parent.get(current))
-               path.add(current.action);
+            for (;currentWrapper.actionStatePair.action != null; currentWrapper = currentWrapper.predecessor)
+               path.add(currentWrapper.actionStatePair.action);
             Collections.reverse(path);
             return path;
          }
-         for (final ActionStatePair<State> neighbor : sssp.successor(current.state)) {
-            if (closedSet.contains(neighbor.state))
+         for (final ActionStatePair<State> successor : sssp.successor(currentState)) {
+            if (closedSet.contains(successor.state))
                continue;
-            final StateWrapper<State> neighborWrapper = openSet.get(new StateWrapper<>(neighbor));
-            final double newG = currentWrapper.g + neighbor.action.cost();
-            if (neighborWrapper == null) {
+            final StateWrapper<State> successorWrapper = openSet.get(new StateWrapper<>(successor));
+            final double newG = currentWrapper.g + successor.action.cost();
+            if (successorWrapper == null) {
                final double h = justAboveOne
-                     * heuristic.heuristic(neighbor.state);
-               parent.put(neighbor, current);
+                     * heuristic.heuristic(successor.state);
 
-               openSet.add(new StateWrapper<>(neighbor, newG + h, newG, h));
+               openSet.add(new StateWrapper<>(successor, newG + h, newG, h, currentWrapper));
             } else {
-               final Double oldG = neighborWrapper.g;
+               final Double oldG = successorWrapper.g;
                if (newG < oldG) {
-                  openSet.remove(neighborWrapper);
-                  final double h = neighborWrapper.h;
-                  parent.put(neighbor, current);
-                  openSet.add(new StateWrapper<>(neighbor, newG + h, newG, h));
+                  openSet.remove(successorWrapper);
+                  final double h = successorWrapper.h;
+                  openSet.add(new StateWrapper<>(successor, newG + h, newG, h, currentWrapper));
                }
             }
          }
