@@ -114,42 +114,82 @@ public class ShoppingPlan {
                         final Store store = stores.get(s);
                         final double priceOfGasToStore = state.store.goStorePrice(store);
                         final double priceOfGasToHomeToStore = state.store.goStorePrice(home) + home.goStorePrice(store);
+
+                        final BitSet itemsToBuy2 = new BitSet(state.itemsToBuy);
+                        boolean perishable2 = false;
+                        short price2 = 0;
                         for (Store.Item storeItem : store.items) {
-                            if (storeItem.isToBuy(state)) {
-                                final int item = storeItem.item.index;
-                                final short price = storeItem.price;
-
-                                final BitSet itemsToBuy2 = state.itemsToBuy.cloneClear(item);
-
-                                final Action action;
-                                final State state2;
-                                if (itemsToBuy2.isEmpty()) {
-                                    if (state.store == store)
-                                        action = () -> price + store.goStorePrice(home);
-                                    else if (state.hasPerishable)
-                                        action = () -> price + priceOfGasToHomeToStore + store.goStorePrice(home);
-                                    else
-                                        action = () -> price + priceOfGasToStore + store.goStorePrice(home);
-                                    state2 = new State(itemsToBuy2, home, false, null);
-                                } else if (store == state.store) {
-                                    action = () -> price;
-                                    state2 = new State(itemsToBuy2,
-                                                       store,
-                                                       state.hasPerishable || storeItem.item.perishable,
-                                                       storeItem);
-                                } else if (state.hasPerishable) {
-                                    action = () -> price + priceOfGasToHomeToStore;
-                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable, storeItem);
-                                } else {
-                                    action = () -> price + priceOfGasToStore;
-                                    state2 = new State(itemsToBuy2, store, storeItem.item.perishable, storeItem);
-                                }
-
-                                successors.add(new ActionStatePair<>(action, state2));
+                            if (storeItem.isToBuyNow(state)) {
+                                itemsToBuy2.clear(storeItem.item.index);
+                                perishable2 |= storeItem.item.perishable;
+                                price2 += storeItem.price;
                             }
                         }
+
+                        if (!state.itemsToBuy.equals(itemsToBuy2))
+                            addSuccessor(state,
+                                         successors,
+                                         store,
+                                         priceOfGasToStore,
+                                         priceOfGasToHomeToStore,
+                                         null,
+                                         itemsToBuy2,
+                                         perishable2,
+                                         price2);
+                        else
+                            for (Store.Item storeItem : store.items) {
+                                if (itemsToBuy2.get(storeItem.item.index) && storeItem.isToBuy(state)) {
+                                    final int itemToBuy3 = storeItem.item.index;
+                                    final BitSet itemsToBuy3 = itemsToBuy2.cloneClear(itemToBuy3);
+                                    final boolean perishable3 = perishable2 || storeItem.item.perishable;
+                                    final int price3 = price2 + storeItem.price;
+
+                                    addSuccessor(state,
+                                                 successors,
+                                                 store,
+                                                 priceOfGasToStore,
+                                                 priceOfGasToHomeToStore,
+                                                 storeItem,
+                                                 itemsToBuy3,
+                                                 perishable3,
+                                                 price3);
+                                }
+                            }
                     }
                     return successors;
+                }
+
+                private void addSuccessor(final State state,
+                                          final ArrayList<ActionStatePair<State>> successors,
+                                          final Store store,
+                                          final double priceOfGasToStore,
+                                          final double priceOfGasToHomeToStore,
+                                          final Store.Item lastBought3,
+                                          final BitSet itemsToBuy3,
+                                          final boolean hasPerishable3,
+                                          final int price3) {
+                    final Action action3;
+                    final State state3;
+                    if (itemsToBuy3.isEmpty()) {
+                        if (state.store == store)
+                            action3 = () -> price3 + store.goStorePrice(home);
+                        else if (state.hasPerishable)
+                            action3 = () -> priceOfGasToHomeToStore + price3 + store.goStorePrice(home);
+                        else
+                            action3 = () -> priceOfGasToStore + price3 + store.goStorePrice(home);
+                        state3 = new State(itemsToBuy3, home, false, null);
+                    } else if (state.store == store) {
+                        action3 = () -> price3;
+                        state3 = new State(itemsToBuy3, store, state.hasPerishable || hasPerishable3, lastBought3);
+                    } else if (state.hasPerishable) {
+                        action3 = () -> priceOfGasToHomeToStore + price3;
+                        state3 = new State(itemsToBuy3, store, hasPerishable3, lastBought3);
+                    } else {
+                        action3 = () -> priceOfGasToStore + price3;
+                        state3 = new State(itemsToBuy3, store, hasPerishable3, lastBought3);
+                    }
+
+                    successors.add(new ActionStatePair<>(action3, state3));
                 }
 
             }).stream().mapToDouble(Action::cost).sum();
@@ -239,6 +279,10 @@ public class ShoppingPlan {
                     item.setMinPrice(price);
                 }
 
+                private boolean isToBuyNow(final State state) {
+                    return isToBuy(state) && price <= item.getMinPrice() && !item.perishable;
+                }
+
                 private boolean isToBuy(final State state) {
                     return state.itemsToBuy.get(item.index) &&
                            (state.store != Store.this || state.lastBought == null || state.lastBought.item.index < item.index);
@@ -287,6 +331,10 @@ public class ShoppingPlan {
 
         public BitSet(final int size) {
             assert size <= Integer.SIZE;
+        }
+
+        public BitSet(final BitSet set) {
+            word = set.word;
         }
 
         public void set(int bitIndex, boolean value) {
