@@ -12,13 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.PrimitiveIterator;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 /**
  * https://code.google.com/codejam/contest/32003/dashboard#s=p3
@@ -86,7 +81,9 @@ public class ShoppingPlan {
 
         private double minimumSpend() {
             final AStarSearch<State> search = new AStarSearch<>(state -> {
-                final int itemsMinPrice = state.itemsToBuy.stream().map(index -> items.get(index).getMinPrice()).sum();
+                int itemsMinPrice = 0;
+                for (int index = state.itemsToBuy.nextSetBit(0); index >= 0; index = state.itemsToBuy.nextSetBit(index + 1))
+                    itemsMinPrice += items.get(index).getMinPrice();
                 final double goHomePrice = state.store.goStorePrice(home);
                 return itemsMinPrice + goHomePrice;
             });
@@ -355,36 +352,6 @@ public class ShoppingPlan {
             long firstWordMask = WORD_MASK << fromIndex;
             long lastWordMask = WORD_MASK >>> -toIndex;
             word |= (firstWordMask & lastWordMask);
-        }
-
-        public IntStream stream() {
-            class BitSetIterator implements PrimitiveIterator.OfInt {
-                int next = nextSetBit(0);
-
-                @Override
-                public boolean hasNext() {
-                    return next != -1;
-                }
-
-                @Override
-                public int nextInt() {
-                    if (next != -1) {
-                        int ret = next;
-                        next = nextSetBit(next + 1);
-                        return ret;
-                    } else {
-                        throw new NoSuchElementException();
-                    }
-                }
-            }
-
-            return StreamSupport.intStream(
-                    () -> Spliterators.spliterator(
-                            new BitSetIterator(), Integer.bitCount(word),
-                            Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED),
-                    Spliterator.SIZED | Spliterator.SUBSIZED |
-                    Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED,
-                    false);
         }
 
         public int nextSetBit(int fromIndex) {
