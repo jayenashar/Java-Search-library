@@ -35,8 +35,8 @@ public class ShoppingPlan {
         final double[] minimumSpends = new double[numCases];
         IntStream.range(0, numCases).sequential().forEachOrdered(caseIndex -> {
             try {
-                cases[caseIndex] = new Case(reader);
-//                cases[caseIndex] = new CaseCPP(reader);
+//                cases[caseIndex] = new Case(reader);
+                cases[caseIndex] = new CaseCPP(reader);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -382,7 +382,7 @@ public class ShoppingPlan {
             }
         }
 
-        double f(final int mask, final int cur, final int b) {
+        double f(final int mask, final int cur, final int b, final int lastBought) {
             final int ret = (mask * m + cur) * 2 + b;
             if (F[ret] == -1) {
                 F[ret] = Double.POSITIVE_INFINITY;
@@ -390,17 +390,27 @@ public class ShoppingPlan {
                     if (cur == m - 1) F[ret] = 0;
                     return F[ret];
                 }
-                for (int i = 0; i < n; i++)
-                    if ((mask & 1 << i) != 0 && M[cur * n + i] != -1) for (int j = 0; j < m; j++) {
+                for (int i = lastBought + 1; i < n; i++) {
+                    final short storeItemPrice = M[cur * n + i];
+                    if ((mask & 1 << i) != 0 && storeItemPrice != -1) {
                         final int tmp = mask ^ (1 << i);
-                        if (j == cur) {
-                            F[ret] = Math.min(F[ret], f(tmp, j, b | bad[i]) + M[cur * n + i]);
-                        } else if ((bad[i] | b) != 0) {
-                            F[ret] = Math.min(F[ret], f(tmp, j, 0) + M[cur * n + i] + (abs(P[cur]) + abs(P[j])));
+                        if (tmp == 0) {
+                            F[ret] = f(tmp, m - 1, 0, -1) + storeItemPrice + abs(P[cur]);
                         } else {
-                            F[ret] = Math.min(F[ret], f(tmp, j, 0) + M[cur * n + i] + abs(P[j], P[cur]));
+                            final int bad3 = b | bad[i];
+                            final double buyAndGoHome = storeItemPrice + abs(P[cur]);
+                            for (int j = 0; j < m - 1; j++) {
+                                if (j == cur) {
+                                    F[ret] = Math.min(F[ret], f(tmp, j, bad3, i) + storeItemPrice);
+                                } else if (bad3 != 0) {
+                                    F[ret] = Math.min(F[ret], f(tmp, j, 0, -1) + buyAndGoHome + abs(P[j]));
+                                } else {
+                                    F[ret] = Math.min(F[ret], f(tmp, j, 0, -1) + storeItemPrice + abs(P[j], P[cur]));
+                                }
+                            }
                         }
                     }
+                }
                 //cout << mask<<' '<<cur<<' '<<b<<' '<<F[ret]<<endl;
             }
             return F[ret];
@@ -414,7 +424,7 @@ public class ShoppingPlan {
         double minimumSpend() {
             double sol = Double.POSITIVE_INFINITY;
             for (int i = 0; i < m; i++) {
-                sol = Math.min(sol, f((1 << n) - 1, i, 0) + abs(P[i]));
+                sol = Math.min(sol, f((1 << n) - 1, i, 0, -1) + abs(P[i]));
             }
             return sol;
         }
