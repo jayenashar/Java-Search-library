@@ -8,8 +8,8 @@ import au.edu.unsw.cse.jayen.search.Heuristic;
  * @author jayen
  * 
  */
-public class UniformCostSearch extends AStarSearch {
+public class UniformCostSearch<State> extends AStarSearch<State> {
    public UniformCostSearch() {
-      super(new Heuristic.Zero(), new Heuristic.Zero());
+      super(new Heuristic.Zero<>(), new Heuristic.Zero<>());
    }
 }

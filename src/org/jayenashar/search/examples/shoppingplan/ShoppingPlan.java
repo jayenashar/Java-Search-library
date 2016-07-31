@@ -3,6 +3,7 @@ package org.jayenashar.search.examples.shoppingplan;
 import au.edu.unsw.cse.jayen.search.AStarSearch;
 import au.edu.unsw.cse.jayen.search.Action;
 import au.edu.unsw.cse.jayen.search.ActionStatePair;
+import au.edu.unsw.cse.jayen.search.Search;
 import au.edu.unsw.cse.jayen.search.StateSpaceSearchProblem;
 
 import java.io.BufferedReader;
@@ -33,7 +34,8 @@ public class ShoppingPlan {
         final double[] minimumSpends = new double[numCases];
         IntStream.range(0, numCases).sequential().forEachOrdered(caseIndex -> {
             try {
-                cases[caseIndex] = new Case(reader);
+//                cases[caseIndex] = new Case(reader);
+                cases[caseIndex] = new CaseCPP(reader);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -48,11 +50,10 @@ public class ShoppingPlan {
     }
 
     private static class Case {
+        final         List<Item>  items;
+        final         List<Store> stores;
+        final         Store       home;
         private final short       priceOfGas;
-        private final List<Item>  items;
-        private final BitSet      perishableItems;
-        private final List<Store> stores;
-        private final Store       home;
         private final byte        numStores;
 
         private Case(final BufferedReader reader) throws IOException {
@@ -63,11 +64,9 @@ public class ShoppingPlan {
 
             final String[] itemsArray = reader.readLine().split(" ");
             items = new ArrayList<>(itemsArray.length);
-            perishableItems = new BitSet(items.size());
             for (int i = 0; i < itemsArray.length; i++) {
                 final Item item = new Item(itemsArray[i], i);
                 items.add(item);
-                perishableItems.set(i, item.perishable);
             }
             assert numItems == items.size();
 
@@ -79,8 +78,8 @@ public class ShoppingPlan {
 
         }
 
-        private double minimumSpend() {
-            final AStarSearch<State> search = new AStarSearch<>(state -> {
+        double minimumSpend() {
+            final Search<State> search = new AStarSearch<>(state -> {
                 int itemsMinPrice = 0;
                 for (int index = state.itemsToBuy.nextSetBit(0); index >= 0; index = state.itemsToBuy.nextSetBit(index + 1))
                     itemsMinPrice += items.get(index).getMinPrice();
@@ -92,8 +91,6 @@ public class ShoppingPlan {
                 public Iterable<State> initialStates() {
                     final BitSet itemsToBuy = new BitSet(items.size());
                     itemsToBuy.set(0, items.size());
-                    final short[] itemsPrice = new short[items.size()];
-                    Arrays.fill(itemsPrice, Short.MIN_VALUE);
                     return Collections.singleton(new State(itemsToBuy, home, false, null));
                 }
 
@@ -228,7 +225,7 @@ public class ShoppingPlan {
             }
         }
 
-        private class Store {
+        class Store {
             private final short    xPos;
             private final short    yPos;
             private final Item[]   items;
@@ -383,9 +380,77 @@ public class ShoppingPlan {
         }
 
         public int hashCode() {
-            int h = 1234;
-            h ^= word;
-            return h;
+            return word;
+        }
+    }
+
+    private static class CaseCPP extends Case {
+        private final int      n;
+        private final int      m;
+        private final double[] F;
+        private final Store[]  P;
+        private final short[]  M;
+        private final int[]    bad;
+
+        private CaseCPP(final BufferedReader reader) throws IOException {
+            super(reader);
+            n = items.size();
+            m = stores.size();
+            F = new double[(1 << n) * m * 2];
+            Arrays.fill(F, -1);
+            P = stores.toArray(new Store[m]);
+            M = new short[m * n];
+            Arrays.fill(M, (short) -1);
+            for (int i = 0, storesSize = stores.size(); i < storesSize; i++) {
+                for (final Store.Item item : stores.get(i).items) {
+                    M[i * n + item.item.index] = item.price;
+                }
+            }
+            bad = new int[n];
+            for (int i = 0, itemsSize = items.size(); i < itemsSize; i++) {
+                bad[i] = items.get(i).perishable ? 1 : 0;
+            }
+        }
+
+        double f(final int mask, final int cur, final int b) {
+            final int ret = (mask * m + cur) * 2 + b;
+            if (F[ret] == -1) {
+                F[ret] = Double.POSITIVE_INFINITY;
+                if (mask == 0) {
+                    if (cur == m - 1) F[ret] = 0;
+                    return F[ret];
+                }
+                for (int i = 0; i < n; i++)
+                    if ((mask & 1 << i) != 0 && M[cur * n + i] != -1) for (int j = 0; j < m; j++) {
+                        final int tmp = mask ^ (1 << i);
+                        if (j == cur) {
+                            F[ret] = Math.min(F[ret], f(tmp, j, b | bad[i]) + M[cur * n + i]);
+                        } else if ((bad[i] | b) != 0) {
+                            F[ret] = Math.min(F[ret], f(tmp, j, 0) + M[cur * n + i] + (abs(P[cur]) + abs(P[j])));
+                        } else {
+                            F[ret] = Math.min(F[ret], f(tmp, j, 0) + M[cur * n + i] + abs(P[j], P[cur]));
+                        }
+                    }
+                //cout << mask<<' '<<cur<<' '<<b<<' '<<F[ret]<<endl;
+            }
+            return F[ret];
+        }
+
+        private double abs(final Store store, final Store store1) {
+            return store.goStorePrice(store1);
+        }
+
+        @Override
+        double minimumSpend() {
+            double sol = Double.POSITIVE_INFINITY;
+            for (int i = 0; i < m; i++) {
+                sol = Math.min(sol, f((1 << n) - 1, i, 0) + abs(P[i]));
+            }
+            return sol;
+        }
+
+        private double abs(final Store store) {
+            return store.goStorePrice(home);
         }
     }
 }
